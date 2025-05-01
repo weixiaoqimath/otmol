@@ -151,34 +151,31 @@ def molecule_ot_and_alignment(
             flag = True
         if case == 'multiple' and is_permutation(assignment, case='multiple', multiple_molecules_block_size=multiple_molecules_block_size):
             flag = True
-        #if case == 'cyclic peptides' and is_permutation(assignment, case='cyclic peptides'):
-        #    flag = True
         X_B_aligned, _, _ = molecule_alignment_allow_reflection(X_A, X_B, permutation_to_matrix(assignment))
         
         # OT 
         D_ot = distance_matrix(X_A, X_B_aligned)**2
         D_ot[C == np.inf] = np.inf
+        #mask = np.isfinite(D_ot)
+        #print(np.max(D_ot[mask]))
         D_ot = normalize_matrix(D_ot)
-        D_ot[D_ot == np.inf] = 1e12
         a = np.ones(X_A.shape[0])/X_A.shape[0]
         b = np.ones(X_B.shape[0])/X_B.shape[0]
         if flag and method == 'emd':
+            D_ot[D_ot == np.inf] = 1e12
             P_ot = ot.emd(a, b, D_ot)
         if flag and method == 'sinkhorn':
+            D_ot[D_ot == np.inf] = 1e12
             P_ot = ot.sinkhorn(a, b, D_ot, reg=reg)
-        #if flag and method == 'sOT':
-        #    options = {
-        #        'niter_sOT': 10**4,
-        #        'f_init': np.zeros(X_A.shape[0]),
-        #        'g_init': np.zeros(X_B.shape[0]),
-        #        'penalty': 10
-        #    }
-        #    P_ot, _, _ = perform_sOT_log(D_ot, a, b, 1e-2, options)
-            #plt.figure(figsize=(10, 10))
-            #plt.imshow(P_ot)
-            #plt.colorbar(label='Value')
-            #plt.title('Optimal transport plan')
-            #plt.show()
+        if flag and method == 'sOT':
+            options = {
+                'niter_sOT': 10**3,
+                'f_init': np.zeros(X_A.shape[0]),
+                'g_init': np.zeros(X_B.shape[0]),
+                'penalty': 10,
+                'stopthr': 1e-8
+            }
+            P_ot, _, _ = perform_sOT_log(D_ot, a, b, 1e-3, options)
         if not is_permutation(np.argmax(P_ot, axis=1)):
             continue
         rmsd = root_mean_square_deviation(X_A, X_B_aligned[np.argmax(P_ot, axis=1)])

@@ -8,93 +8,19 @@ import numpy as np
 from typing import List, Tuple, Union, Optional
 from scipy.spatial import distance_matrix
 import matplotlib.pyplot as plt
-#def molecule_optimal_transport(
-#    C: np.ndarray,
-#    D1: np.ndarray,
-#    D2: np.ndarray,
-#    method: str = 'fgw',
-#    alpha: float = 0.5,
-#    gamma: float = 2.0,
-#    eps: float = 0.1,
-#    fsgw_gamma: float = 2.0,
-#    fsgw_niter: int = 10,
-#    sgw_gamma: float = 2.0,
-#    sgw_niter: int = 20,
-#    sgw_cutoff: float = np.inf
-#):
-#    """
-#    Compute optimal transport plan between molecules, each with n and m atoms.
 
-#    Parameters
-#    ----------
-#    C
-#        The cost matrix of shape ``n`` × ``m`` between atoms from the two molecules, such as distance in physical chemical properties.
-#    D1
-#        An ``n`` x ``n`` distance matrix between atoms in molecule 1. Examples include (1) geodesic distance on the graph with edges representing bonds and (2) simply Euclidean distance.
-#    D2
-#        Similar to ``D1``, but an ``m`` x ``m`` matrix for molecule 2.
-#    method
-#        The optimal transport method to use. 
-#        `'fgw`' fused Gromov-Wasserstein,
-#        `'efgw`' entropy regularized fused Gromov-Wasserstein,
-#        `'fugw`' fused unbalanced Gromov-Wasserstein,
-#        `'fsgw`' fused supervised Gromov-Wasserstein,
-#        `'gw`' Gromov-Wasserstein,
-#        `'egw`' entropy regularized Gromov-Wasserstein,
-#        `'ugw`' unbalanced Gromov-Wasserstein,
-#        `'sgw`' supervised Gromov-Wasserstein.
-#    alpha
-#        The weight for the GW term if fused GW is used. The weight for the Wasserstein term will be (1-alpha).
-#    gamma
-#        The coefficient for KL divergence if unbalanced GW or fused unbalanced GW is used.
-#    eps
-#        The coefficient for the entropy regularization term.
-#    fsgw_gamma
-#        The coefficient for the penalty term of untransported mass in fused supervised GW.
-#    fsgw_niter
-#        The number of iterations in the fsgw algorithm.
-#    sgw_gamma
-#        The coefficient for the penalty term or the untransported mass in supervised GW.
-#    sgw_niter
-#        The number of iterations in the sgw algorithm.
-#    sgw_cutoff
-#        The gw cutoff value if sgw or fsgw is used.
-
-#    Returns
-#    -------
-#    P : np.ndarray
-#        The ``n`` x ``m`` optimal transport matrix between the two molecules.
-#    """
-
-#    if method == 'fgw':
-#        P = ot.gromov.fused_gromov_wasserstein(C, D1, D2, alpha=alpha)
-#    elif method == 'efgw':
-#        P = ot.gromov.entropic_fused_gromov_wasserstein(C, D1, D2, alpha=alpha, epsilon=eps)
-#    elif method == 'fugw':
-#        P,_ = ot.gromov.fused_unbalanced_gromov_wasserstein(D1, D2, M=C, reg_marginals=gamma, epsilon=eps, alpha=(1-alpha)/alpha)
-#    elif method == 'fsgw':
-#        P = fused_supervised_gromov_wasserstein(D1, D2, C, fsgw_niter=fsgw_niter, fsgw_eps=eps, fsgw_alpha=alpha, fsgw_gamma=fsgw_gamma, gw_cutoff=sgw_cutoff)
-#    elif method == 'gw':
-#        P = ot.gromov.fused_gromov_wasserstein(C, D1, D2, alpha=alpha)
-#    elif method == 'egw':
-#        P = ot.gromov.entropic_gromov_wasserstein(C, D1, D2, alpha=alpha, epsilon=eps)
-#    elif method == 'ugw':
-#        P,_ = ot.gromov.fused_unbalanced_gromov_wasserstein(D1, D2, M=C, reg_marginals=gamma, epsilon=eps, alpha=0)
-#    elif method == 'sgw':
-#        P = supervised_gromov_wasserstein(D1, D2, eps=eps, nitermax=sgw_niter, threshold=sgw_cutoff)
-#    return P
-#    return P
 
 def molecule_ot_and_alignment(
         X_A, 
         X_B, 
         T_A, 
         T_B, 
-        method: str = 'emd', 
+        method: List[str] = ['fgw', 'emd'], 
         alpha_list: list = None, 
         case: str = 'single', 
         multiple_molecules_block_size: List[int] = None,
-        reg: float = 1e-2
+        reg: float = 1e-2,
+        gamma: float = 2.0,
         ) -> Tuple[np.ndarray, float, float]:
     """Compute optimal transport and alignment between molecules.
 
@@ -127,12 +53,12 @@ def molecule_ot_and_alignment(
         Best alpha value.
     """
     if case == 'single': 
-        C = cost_matrix(T_A, T_B, np.inf)
+        C = cost_matrix(T_A = T_A, T_B = T_B, k = np.inf)
         C = normalize_matrix(C)
     if case == 'multiple':
         if multiple_molecules_block_size is None:
             raise ValueError('multiple_molecules_block_size is required for multiple molecules')
-        C = cost_matrix(T_A, T_B, np.inf, multiple_molecules_block_size)
+        C = cost_matrix(T_A = T_A, T_B = T_B, k = np.inf, multiple_molecules_block_size = multiple_molecules_block_size)
         C = normalize_matrix(C)
     C_finite = C.copy()
     C_finite[C_finite == np.inf] = 1e12
@@ -142,15 +68,21 @@ def molecule_ot_and_alignment(
     P_best = None
     alpha_best = None
     for alpha in alpha_list:
-        #if method == 'fgw':
+        if method[0] == 'fgw':
             # Fused Gromov-Wasserstein
-        P = ot.gromov.fused_gromov_wasserstein(C_finite, D_A/D_A.max(), D_B/D_A.max(), alpha=alpha, symmetric=True)
+            P = ot.gromov.fused_gromov_wasserstein(C_finite, D_A/D_A.max(), D_B/D_A.max(), alpha=alpha, symmetric=True)
+        elif method[0] == 'fsgw':
+            # Fused Supervised Gromov-Wasserstein
+            P = fsgw_mvc(D_A/D_A.max(), D_B/D_A.max(), M=C, fsgw_alpha=alpha, fsgw_gamma=gamma, fsgw_niter=10, fsgw_eps=0.001)
         assignment = np.argmax(P, axis=1)
         flag = False
         if case == 'single' and is_permutation(assignment):
             flag = True
-        if case == 'multiple' and is_permutation(assignment, case='multiple', multiple_molecules_block_size=multiple_molecules_block_size):
+        elif case == 'multiple' and is_permutation(assignment, case='multiple', multiple_molecules_block_size=multiple_molecules_block_size):
             flag = True
+        else: 
+            continue
+
         X_B_aligned, _, _ = molecule_alignment_allow_reflection(X_A, X_B, permutation_to_matrix(assignment))
         
         # OT 
@@ -161,19 +93,19 @@ def molecule_ot_and_alignment(
         D_ot = normalize_matrix(D_ot)
         a = np.ones(X_A.shape[0])/X_A.shape[0]
         b = np.ones(X_B.shape[0])/X_B.shape[0]
-        if flag and method == 'emd':
+        if flag and method[1] == 'emd':
             D_ot[D_ot == np.inf] = 1e12
             P_ot = ot.emd(a, b, D_ot)
-        if flag and method == 'sinkhorn':
+        if flag and method[1] == 'sinkhorn':
             D_ot[D_ot == np.inf] = 1e12
             P_ot = ot.sinkhorn(a, b, D_ot, reg=reg)
-        if flag and method == 'sOT':
+        if flag and method[1] == 'sOT':
             options = {
                 'niter_sOT': 10**3,
                 'f_init': np.zeros(X_A.shape[0]),
                 'g_init': np.zeros(X_B.shape[0]),
-                'penalty': 10,
-                'stopthr': 1e-8
+                'penalty': gamma,
+                'stopthr': 1e-8,
             }
             P_ot, _, _ = perform_sOT_log(D_ot, a, b, 1e-3, options)
         if not is_permutation(np.argmax(P_ot, axis=1)):
@@ -187,6 +119,7 @@ def molecule_ot_and_alignment(
         raise ValueError('No valid permutation found')
     return np.argmax(P_best, axis=1), rmsd_best, alpha_best
 
+
 def cluster_ot_and_alignment(
         X_A: np.ndarray, 
         X_B: np.ndarray, 
@@ -195,7 +128,9 @@ def cluster_ot_and_alignment(
         method: str = 'emd',
         p_list: list = None, 
         case: str = 'same elements',
-        reg: float = 1e-2
+        reg: float = 1e-2, # for sOT
+        n_atoms: int = None, # for molecule cluster, the number of atoms in each molecule
+        molecule_cluster_options: str = 'center',
         ):
     """Compute optimal transport and alignment between clusters.
 
@@ -255,7 +190,7 @@ def cluster_ot_and_alignment(
    
     if case == 'water cluster':
         O_A, O_B = X_A[T_A == 'O'], X_B[T_B == 'O']
-        list_P = perturbation_before_gw(O_A, O_B, p = 1, n_trials = 400, scale = 0.1)
+        list_P = perturbation_before_gw(O_A, O_B, p = 1, n_trials = 500, scale = 0.1)
         print('The number of candidate oxygen atom permutations is', len(list_P))
         rmsd_best = 1e10
         P_best = None
@@ -298,6 +233,52 @@ def cluster_ot_and_alignment(
             if rmsd < rmsd_best:
                 rmsd_best = rmsd
                 P_best = P_ot
+        return np.argmax(P_best, axis=1), rmsd_best
+    
+    if case == 'molecule cluster':
+        if molecule_cluster_options == 'center':
+            representative_A, representative_B = X_A.reshape(-1, n_atoms, 3).mean(axis=1), X_B.reshape(-1, n_atoms, 3).mean(axis=1)
+        elif molecule_cluster_options == 'oxygen':
+            representative_A, representative_B = X_A[T_A == 'O'], X_B[T_B == 'O']
+        list_P = perturbation_before_gw(representative_A, representative_B, p = 1, n_trials = 500, scale = 0.1)
+        print('The number of candidate center permutations is', len(list_P))
+        rmsd_best = 1e10
+        P_best = None
+        for perm in list_P:
+            P = permutation_to_matrix(perm)
+            _, R, t = molecule_alignment_allow_reflection(representative_A, representative_B, P)
+            X_B_aligned = (R @ X_B.T).T + t
+            a, b = np.ones(X_A.shape[0])/X_A.shape[0], np.ones(X_B.shape[0])/X_B.shape[0]
+            # construct a distance matrix such that one water molecule is mapped to another according to P
+            D_ot = np.full((X_A.shape[0], X_B.shape[0]), np.inf)
+            for i in range(X_A.shape[0]//n_atoms): 
+                j = np.argmax(P[i])
+                X_A_i, X_B_aligned_j = X_A[i*n_atoms:(i+1)*n_atoms], X_B_aligned[j*n_atoms:(j+1)*n_atoms]
+                T_A_i, T_B_j = T_A[i*n_atoms:(i+1)*n_atoms], T_B[j*n_atoms:(j+1)*n_atoms]
+                D_ot[i*n_atoms:(i+1)*n_atoms, j*n_atoms:(j+1)*n_atoms] = cost_matrix(X_A_i, X_B_aligned_j, T_A_i, T_B_j, np.inf)
+
+            D_ot = normalize_matrix(D_ot)
+            if method == 'emd':
+                D_ot[D_ot == np.inf] = 1e12
+                P_ot = ot.emd(a, b, D_ot)
+            if method == 'sOT':
+                options = {
+                    'niter_sOT': 10**2,
+                    'f_init': np.zeros(X_A.shape[0]),
+                    'g_init': np.zeros(X_B.shape[0]),
+                    'penalty': 10,
+                    'stopthr': 1e-8
+                }
+                P_ot, _, _ = perform_sOT_log(D_ot, a, b, 1e-2, options) 
+                if not is_permutation(np.argmax(P_ot, axis=1)):
+                    continue
+            X_B_aligned, _, _ = molecule_alignment_allow_reflection(X_A, X_B, P_ot)
+            rmsd = root_mean_square_deviation(X_A, X_B_aligned[np.argmax(P_ot, axis=1)])
+
+            if rmsd < rmsd_best:
+                rmsd_best = rmsd
+                P_best = P_ot
+
         return np.argmax(P_best, axis=1), rmsd_best        
 
 def molecule_alignment_allow_reflection(

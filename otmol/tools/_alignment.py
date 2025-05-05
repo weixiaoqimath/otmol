@@ -2,7 +2,8 @@ from .._optimal_transport import fsgw_mvc, perform_sOT_log
 from .._optimal_transport import supervised_gromov_wasserstein
 #from .._optimal_transport import supervised_optimal_transport
 from ._utils import is_permutation, permutation_to_matrix, cost_matrix
-from ._utils import root_mean_square_deviation, add_perturbation, normalize_matrix
+from ._utils import root_mean_square_deviation 
+from ._utils import add_perturbation, normalize_matrix, resolve_sinkhorn_conflicts
 import ot
 import numpy as np
 from typing import List, Tuple, Union, Optional
@@ -15,12 +16,11 @@ def molecule_ot_and_alignment(
         X_B, 
         T_A, 
         T_B, 
-        method: List[str] = ['fgw', 'emd'], 
+        method: List[str] = ['fGW', 'emd'], 
         alpha_list: list = None, 
         case: str = 'single', 
         multiple_molecules_block_size: List[int] = None,
         reg: float = 1e-2,
-        gamma: float = 2.0,
         ) -> Tuple[np.ndarray, float, float]:
     """Compute optimal transport and alignment between molecules.
 
@@ -34,14 +34,16 @@ def molecule_ot_and_alignment(
         Atom labels of molecule A.
     T_B : array_like
         Atom labels of molecule B.
-    method : str, optional
-        Optimal transport method to use, by default 'fgw'.
+    method : list of str
+        Optimal transport method to use, by default ['fgw', 'emd'].
     alpha_list : list
-        List of alpha values to try, by default None.
-    case : str, optional
+        List of alpha values to try for fGW or fsGW, by default None.
+    case : str
         Case type ('single' or 'multiple'), by default 'single'.
     multiple_molecules_block_size : List[int], optional
         Block sizes for multiple molecules case, by default None.
+    reg : float, optional
+        Regularization parameter for sinkhorn, by default 1e-2.
 
     Returns
     -------
@@ -65,27 +67,21 @@ def molecule_ot_and_alignment(
     D_A = distance_matrix(X_A, X_A)
     D_B = distance_matrix(X_B, X_B)
     rmsd_best = 1e10
-    P_best = None
+    permutation_best = None
     alpha_best = None
     for alpha in alpha_list:
-        if method[0] == 'fgw':
+        if method[0] == 'fGW':
             # Fused Gromov-Wasserstein
             P = ot.gromov.fused_gromov_wasserstein(C_finite, D_A/D_A.max(), D_B/D_A.max(), alpha=alpha, symmetric=True)
-        elif method[0] == 'fsgw':
+        elif method[0] == 'fsGW':
             # Fused Supervised Gromov-Wasserstein
-            P = fsgw_mvc(D_A/D_A.max(), D_B/D_A.max(), M=C, fsgw_alpha=alpha, fsgw_gamma=gamma, fsgw_niter=10, fsgw_eps=0.001)
+            P = fsgw_mvc(D_A/D_A.max(), D_B/D_A.max(), M=C, fsgw_alpha=alpha, fsgw_gamma=10, fsgw_niter=10, fsgw_eps=0.001)
         assignment = np.argmax(P, axis=1)
-        flag = False
-        if case == 'single' and is_permutation(assignment):
-            flag = True
-        elif case == 'multiple' and is_permutation(assignment, case='multiple', multiple_molecules_block_size=multiple_molecules_block_size):
-            flag = True
-        else: 
+        if not is_permutation(T_A=T_A, T_B=T_B, perm=assignment, case=case, multiple_molecules_block_size=multiple_molecules_block_size):
             continue
 
+        # OT
         X_B_aligned, _, _ = molecule_alignment_allow_reflection(X_A, X_B, permutation_to_matrix(assignment))
-        
-        # OT 
         D_ot = distance_matrix(X_A, X_B_aligned)**2
         D_ot[C == np.inf] = np.inf
         #mask = np.isfinite(D_ot)
@@ -93,31 +89,31 @@ def molecule_ot_and_alignment(
         D_ot = normalize_matrix(D_ot)
         a = np.ones(X_A.shape[0])/X_A.shape[0]
         b = np.ones(X_B.shape[0])/X_B.shape[0]
-        if flag and method[1] == 'emd':
+        if method[1] == 'emd':
             D_ot[D_ot == np.inf] = 1e12
             P_ot = ot.emd(a, b, D_ot)
-        if flag and method[1] == 'sinkhorn':
+        if method[1] == 'sinkhorn':
             D_ot[D_ot == np.inf] = 1e12
             P_ot = ot.sinkhorn(a, b, D_ot, reg=reg)
-        if flag and method[1] == 'sOT':
+        if method[1] == 'sOT':
             options = {
                 'niter_sOT': 10**3,
                 'f_init': np.zeros(X_A.shape[0]),
                 'g_init': np.zeros(X_B.shape[0]),
-                'penalty': gamma,
+                'penalty': 10,
                 'stopthr': 1e-8,
             }
             P_ot, _, _ = perform_sOT_log(D_ot, a, b, 1e-3, options)
-        if not is_permutation(np.argmax(P_ot, axis=1)):
+        if not is_permutation(T_A=T_A, T_B=T_B, perm=np.argmax(P_ot, axis=1), case=case, multiple_molecules_block_size=multiple_molecules_block_size):
             continue
         rmsd = root_mean_square_deviation(X_A, X_B_aligned[np.argmax(P_ot, axis=1)])
         if rmsd < rmsd_best:
             rmsd_best = rmsd
-            P_best = P_ot
+            permutation_best = np.argmax(P_ot, axis=1)
             alpha_best = alpha
-    if P_best is None:
+    if permutation_best is None:
         raise ValueError('No valid permutation found')
-    return np.argmax(P_best, axis=1), rmsd_best, alpha_best
+    return permutation_best, rmsd_best, alpha_best
 
 
 def cluster_ot_and_alignment(
@@ -128,7 +124,8 @@ def cluster_ot_and_alignment(
         method: str = 'emd',
         p_list: list = None, 
         case: str = 'same elements',
-        reg: float = 1e-2, # for sOT
+        reg: float = 1e-2, 
+        numItermax: int = 1000, 
         n_atoms: int = None, # for molecule cluster, the number of atoms in each molecule
         molecule_cluster_options: str = 'center',
         ):
@@ -144,10 +141,20 @@ def cluster_ot_and_alignment(
         Atom labels of cluster A, by default None.
     T_B : numpy.ndarray, optional
         Atom labels of cluster B, by default None.
-    p_list : list
-        List of power values for distance matrix, by default None.
-    case : str, optional
+    method : str, optional
+        Method to use for optimal transport, by default 'emd'.
+    p_list : list, optional
+        Only used when case is 'same elements'. List of power values for distance matrix, by default None.
+    case : str
         Case type ('same elements' or 'water cluster'), by default 'same elements'.
+    reg : float, optional
+        Regularization parameter for sinkhorn and sOT, by default 1e-2.
+    numItermax : int, optional
+        Maximum number of iterations for sinkhorn and sOT, by default 1000.
+    n_atoms : int, optional
+        Number of atoms in a molecule in a molecule cluster, by default None.
+    molecule_cluster_options : str, optional
+        Options for molecule cluster, by default 'center'.
 
     Returns
     -------
@@ -156,94 +163,46 @@ def cluster_ot_and_alignment(
     float
         Best RMSD value.
     float
-        Best power value (for 'same elements' case).
+        Best p value (for 'same elements' case).
     """
     if case == 'same elements':
         rmsd_best = 1e10
         p_best = None
-        P_best = None
+        permutation_best = None
         for p in p_list:
             D_A = distance_matrix(X_A, X_A)**p
             D_B = distance_matrix(X_B, X_B)**p
             P = ot.gromov.gromov_wasserstein(D_A/D_A.max(), D_B/D_A.max())
             gw_assignment = np.argmax(P, axis=1)
-            if is_permutation(gw_assignment):   
+            if is_permutation(perm=gw_assignment):   
                 X_B_aligned, _, _ = molecule_alignment_allow_reflection(X_A, X_B, permutation_to_matrix(gw_assignment))
                 a = np.ones(X_A.shape[0])/X_A.shape[0]
                 b = np.ones(X_B.shape[0])/X_B.shape[0]
                 if method == 'emd':
                     P_ot = ot.emd(a, b, normalize_matrix(distance_matrix(X_A, X_B_aligned)**2))
+                    ot_assignment = np.argmax(P_ot, axis=1)
                 if method == 'sinkhorn': # sinkhorn may not always output a permutation matrix
-                    P_ot = ot.sinkhorn(a, b, normalize_matrix(distance_matrix(X_A, X_B_aligned)**2), reg=reg)
-                if not is_permutation(np.argmax(P_ot, axis=1)):
-                    continue
-                ot_assignment = np.argmax(P_ot, axis=1)
+                    P_ot = ot.sinkhorn(a, b, normalize_matrix(distance_matrix(X_A, X_B_aligned)**2), reg=reg, numItermax=numItermax)
+                    ot_assignment = resolve_sinkhorn_conflicts(P_ot)
                 X_B_aligned, _, _ = molecule_alignment_allow_reflection(X_A, X_B, permutation_to_matrix(ot_assignment))
                 rmsd = root_mean_square_deviation(X_A, X_B_aligned[ot_assignment])
                 if rmsd < rmsd_best:
                     rmsd_best = rmsd
                     p_best = p
-                    P_best = P_ot 
-        if P_best is None:
+                    permutation_best = ot_assignment
+        if permutation_best is None:
             raise ValueError('No valid permutation found')
-        return np.argmax(P_best, axis=1), rmsd_best, p_best
-   
-    if case == 'water cluster':
-        O_A, O_B = X_A[T_A == 'O'], X_B[T_B == 'O']
-        list_P = perturbation_before_gw(O_A, O_B, p = 1, n_trials = 500, scale = 0.1)
-        print('The number of candidate oxygen atom permutations is', len(list_P))
-        rmsd_best = 1e10
-        P_best = None
-        for perm in list_P:
-            P = permutation_to_matrix(perm)
-            _, R, t = molecule_alignment_allow_reflection(O_A, O_B, P)
-            X_B_aligned = (R @ X_B.T).T + t
-            a, b = np.ones(X_A.shape[0])/X_A.shape[0], np.ones(X_B.shape[0])/X_B.shape[0]
-            # construct a distance matrix such that one water molecule is mapped to another according to P
-            D_ot = np.full((X_A.shape[0], X_B.shape[0]), np.inf)
-            for i in range(0, X_A.shape[0], 3): 
-                j = np.argmax(P[i//3])*3
-                D_ot[i, j] = 0. # O to O
-                D_ot[i+1:i+3, j+1:j+3] = distance_matrix(X_A[i+1:i+3], X_B_aligned[j+1:j+3])
-            D_ot = normalize_matrix(D_ot)
-            if method == 'emd':
-                D_ot[D_ot == np.inf] = 1e12
-                P_ot = ot.emd(a, b, D_ot)
-            #if method == 'sinkhorn':
-            #    D_ot = np.ones((X_A.shape[0], X_B.shape[0]), dtype=float)*1e6
-            #    for i in range(0, X_A.shape[0], 3): 
-            #        j = np.argmax(P[i//3])*3
-            #        D_ot[i, j] = 0. # O to O
-            #        D_ot[i+1:i+3, j+1:j+3] = distance_matrix(X_A[i+1:i+3], X_B_aligned[j+1:j+3])
-            #    P_ot = ot.sinkhorn(a, b, D_ot, reg=1e-2)
-            if method == 'sOT':
-                options = {
-                    'niter_sOT': 10**2,
-                    'f_init': np.zeros(X_A.shape[0]),
-                    'g_init': np.zeros(X_B.shape[0]),
-                    'penalty': 10,
-                    'stopthr': 1e-8
-                }
-                P_ot, _, _ = perform_sOT_log(D_ot, a, b, 1e-2, options) 
-                if not is_permutation(np.argmax(P_ot, axis=1)):
-                    continue
-            X_B_aligned, _, _ = molecule_alignment_allow_reflection(X_A, X_B, P_ot)
-            rmsd = root_mean_square_deviation(X_A, X_B_aligned[np.argmax(P_ot, axis=1)])
-
-            if rmsd < rmsd_best:
-                rmsd_best = rmsd
-                P_best = P_ot
-        return np.argmax(P_best, axis=1), rmsd_best
+        return permutation_best, rmsd_best, p_best
     
     if case == 'molecule cluster':
         if molecule_cluster_options == 'center':
             representative_A, representative_B = X_A.reshape(-1, n_atoms, 3).mean(axis=1), X_B.reshape(-1, n_atoms, 3).mean(axis=1)
-        elif molecule_cluster_options == 'oxygen':
-            representative_A, representative_B = X_A[T_A == 'O'], X_B[T_B == 'O']
+        else:
+            representative_A, representative_B = X_A[T_A == molecule_cluster_options], X_B[T_B == molecule_cluster_options]
         list_P = perturbation_before_gw(representative_A, representative_B, p = 1, n_trials = 500, scale = 0.1)
         print('The number of candidate center permutations is', len(list_P))
         rmsd_best = 1e10
-        P_best = None
+        permutation_best = None
         for perm in list_P:
             P = permutation_to_matrix(perm)
             _, R, t = molecule_alignment_allow_reflection(representative_A, representative_B, P)
@@ -263,23 +222,23 @@ def cluster_ot_and_alignment(
                 P_ot = ot.emd(a, b, D_ot)
             if method == 'sOT':
                 options = {
-                    'niter_sOT': 10**2,
+                    'niter_sOT': numItermax,
                     'f_init': np.zeros(X_A.shape[0]),
                     'g_init': np.zeros(X_B.shape[0]),
                     'penalty': 10,
                     'stopthr': 1e-8
                 }
-                P_ot, _, _ = perform_sOT_log(D_ot, a, b, 1e-2, options) 
-                if not is_permutation(np.argmax(P_ot, axis=1)):
+                P_ot, _, _ = perform_sOT_log(D_ot, a, b, reg, options) 
+                if not is_permutation(T_A, T_B, np.argmax(P_ot, axis=1), case = 'molecule cluster', n_atoms = n_atoms):
                     continue
             X_B_aligned, _, _ = molecule_alignment_allow_reflection(X_A, X_B, P_ot)
             rmsd = root_mean_square_deviation(X_A, X_B_aligned[np.argmax(P_ot, axis=1)])
 
             if rmsd < rmsd_best:
                 rmsd_best = rmsd
-                P_best = P_ot
+                permutation_best = np.argmax(P_ot, axis=1)
 
-        return np.argmax(P_best, axis=1), rmsd_best        
+        return permutation_best, rmsd_best        
 
 def molecule_alignment_allow_reflection(
     X1: np.ndarray,

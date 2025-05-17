@@ -1,0 +1,8 @@
+subfolder,pdb_id_1,sequence_1,pdb_id_2,sequence_2,mean_phi_psi_diff_deg
+c2mers,WEQBAW_fixed.pdb,PL,CITXAE10_fixed.pdb,FP,83.73089223787439
+c3mers,CTLPRO11_2_fixed.pdb,PPP,CTLPRO11_1_fixed.pdb,PPP,4.039994549886049
+c4mers,CEJSUF_fixed.pdb,PVPV,RUQVAB_fixed.pdb,WAPF,96.26007676972075
+c5mers,CGPSAQ_fixed.pdb,GPSAP,FUDWIK_fixed.pdb,GPFGV,80.19742113587753
+c6mers,BUYXOI_fixed.pdb,PPPPPP,GGAAGG_fixed.pdb,GGAAGG,95.62794335842754
+c7mers,JUXHAL_fixed.pdb,IPIFPYP,ZORRED_fixed.pdb,GYGPLIL,64.32422758765198
+c8mers,cNPF_NMR.pdb,YNPFEEGG,NIWHEH_fixed.pdb,PGNISIYY,91.50537151172931

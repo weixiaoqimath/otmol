@@ -1,0 +1,6 @@
+RMSD,folder,reference,subfolder,target,mer
+1.684,../All_Backbone_XYZs/,ALPRAL10_2_fixed_backbone.xyz,c4mers,RUQVAB_fixed_backbone.xyz,4
+1.405,../All_Backbone_XYZs/,CGPSAQ_fixed_backbone.xyz,c5mers,DABVIL_fixed_backbone.xyz,5
+2.183,../All_Backbone_XYZs/,BINJIR_fixed_backbone.xyz,c6mers,DUYTIA_fixed_backbone.xyz,6
+2.403,../All_Backbone_XYZs/,TALVAD_fixed_backbone.xyz,c7mers,ZOHMIS_fixed_backbone.xyz,7
+2.875,../All_Backbone_XYZs/,DASXIE_fixed_backbone.xyz,c8mers,EVAPUM_fixed_backbone.xyz,8

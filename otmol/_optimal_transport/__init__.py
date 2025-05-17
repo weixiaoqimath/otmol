@@ -1,0 +1,3 @@
+from ._fused_supervised_gromov_wasserstein import fsgw_mvc, perform_sOT_log
+#from ._supervised_gromov_wasserstein import supervised_gromov_wasserstein
+#from ._supervised_optimal_transport import sot_sinkhorn_l1_sparse

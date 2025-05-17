@@ -1,0 +1,23 @@
+Metadata-Version: 2.1
+Name: otmol
+Version: 0.0.1
+Summary: Alignment and superposition of small molecules using optimal transport.
+Home-page: UNKNOWN
+License: MIT License
+Keywords: molecule alignment,superposition,optimal transport
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Operating System :: MacOS
+Classifier: Topic :: Scientific/Engineering
+Classifier: Topic :: Scientific/Engineering :: Chemistry
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Provides-Extra: docs
+License-File: LICENSE.md
+
+UNKNOWN
+

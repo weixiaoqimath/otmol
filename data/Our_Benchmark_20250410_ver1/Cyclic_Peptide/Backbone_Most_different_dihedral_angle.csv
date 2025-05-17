@@ -1,0 +1,6 @@
+RMSD,folder,reference,subfolder,target,mer
+1.599,../Backbone_Most_Different,CEJSUF_fixed_backbone.xyz,c4mers,RUQVAB_fixed_backbone.xyz,4
+1.351,../Backbone_Most_Different,CGPSAQ_fixed_backbone.xyz,c5mers,FUDWIK_fixed_backbone.xyz,5
+1.653,../Backbone_Most_Different,BUYXOI_fixed_backbone.xyz,c6mers,GGAAGG_fixed_backbone.xyz,6
+1.597,../Backbone_Most_Different,JUXHAL_fixed_backbone.xyz,c7mers,ZORRED_fixed_backbone.xyz,7
+2.091,../Backbone_Most_Different,NIWHEH_fixed_backbone.xyz,c8mers,cNPF_NMR_backbone.xyz,8

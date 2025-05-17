@@ -1,0 +1,6 @@
+RMSD,folder,reference,subfolder,target,mer
+1.307,../Backbone_Most_Similar,ALPRAL10_2_fixed_backbone.xyz,c4mers,CEJSUF_fixed_backbone.xyz,4
+0.07,../Backbone_Most_Similar,CGPGAP10_fixed_backbone.xyz,c5mers,PAPGAP_fixed_backbone.xyz,5
+0.107,../Backbone_Most_Similar,BIHXUL10_fixed_backbone.xyz,c6mers,CINYED_fixed_backbone.xyz,6
+0.322,../Backbone_Most_Similar,LACSUD_fixed_backbone.xyz,c7mers,TALVAD_fixed_backbone.xyz,7
+2.303,../Backbone_Most_Similar,EVAPUM_fixed_backbone.xyz,c8mers,UZUKUW_fixed_backbone.xyz,8

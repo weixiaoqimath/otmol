@@ -1,0 +1,174 @@
+from typing import Dict, Tuple, TypedDict, Union
+import numpy as np
+from openbabel import openbabel
+#from scipy.sparse.csgraph import floyd_warshall
+import os
+
+ATOMIC_NAME = {
+    1: "H",
+    6: "C",
+    7: "N",
+    8: "O",
+    9: "F",
+    10: "Ne",
+    15: "P",
+    16: "S",
+    17: "Cl",
+    35: "Br"
+}
+
+ATOMIC_COLOR = {
+    "H": "silver",
+    "C": "black",
+    "N": "blue",
+    "O": "red",
+    "F": "green",
+    "P": "orange",
+    "S": "yellow",
+    "Cl": "limegreen",
+    "Br": "salmon"
+}
+
+# covalent radii
+ATOMIC_SIZE = {
+    "H": 0.31,
+    "C": 0.76,
+    "N": 0.71,
+    "O": 0.66,
+    "F": 0.57,
+    "Ne": 0.58,
+    "P": 1.07,
+    "S": 1.05,
+    "Cl": 1.02,
+    "Br": 1.20
+}
+
+ATOMIC_PROPERTIES = {
+    "H": {"en": 2.20, "vdw": 1.10, "cov": 0.31},   # Hydrogen (H)
+    "C": {"en": 2.55, "vdw": 1.70, "cov": 0.76},   # Carbon (C)
+    "N": {"en": 3.04, "vdw": 1.55, "cov": 0.71},   # Nitrogen (N)
+    "O": {"en": 3.44, "vdw": 1.52, "cov": 0.66},   # Oxygen (O)
+    "F": {"en": 3.98, "vdw": 1.47, "cov": 0.64},   # Fluorine (F)
+    "P": {"en": 2.19, "vdw": 1.80, "cov": 1.06},  # Phosphorus (P)
+    "S": {"en": 2.58, "vdw": 1.80, "cov": 1.02},  # Sulfur (S)
+    "Cl": {"en": 3.16, "vdw": 1.75, "cov": 0.99},  # Chlorine (Cl)
+    "Br": {"en": 2.96, "vdw": 1.85, "cov": 1.14},  # Bromine (Br)
+}
+
+
+def process_molecule(mol: openbabel.OBMol) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Process a molecule object read from an xyz file.
+
+    Parameters
+    ----------
+    mol : openbabel.OBMol
+        An OpenBabel molecule object containing the molecular structure.
+
+    Returns
+    -------
+    coordinates : numpy.ndarray
+        Array of shape (n_atoms, 3) containing the 3D coordinates of each atom.
+    atom_types : numpy.ndarray
+        Array of shape (n_atoms,) containing the atomic labels for each atom.
+    bond_matrix : numpy.ndarray
+        Array of shape (n_atoms, n_atoms) containing the bond information,
+        where 1 indicates a bond and 0 indicates no bond.
+
+    Raises
+    ------
+    ValueError
+        If the molecule object is empty or invalid.
+    """
+    if not mol or len(mol.atoms) == 0:
+        raise ValueError("Invalid or empty molecule object provided")
+
+    n = len(mol.atoms)
+    X = np.empty([n, 3], dtype=float)
+    T = np.empty([n], dtype=object)
+    B = np.zeros([n, n], dtype=float)
+    
+    for i in range(n):
+        X[i, :] = mol.atoms[i].coords
+        T[i] = ATOMIC_NAME[mol.atoms[i].atomicnum]
+    
+    obmol = mol.OBMol
+    for bond in openbabel.OBMolBondIter(obmol):
+        atom1 = bond.GetBeginAtom()
+        atom2 = bond.GetEndAtom()
+        B[atom1.GetIdx()-1, atom2.GetIdx()-1] = 1
+        B[atom2.GetIdx()-1, atom1.GetIdx()-1] = 1
+        
+    return X, T, B
+
+
+def parse_sy2(file_path: str) -> tuple[np.ndarray, np.ndarray]:
+    """Parse a SYBYL Mol2 (.sy2) file to extract coordinates and atom types.
+
+    Parameters
+    ----------
+    file_path : str
+        Path to the SYBYL Mol2 file.
+
+    Returns
+    -------
+    coordinates : numpy.ndarray
+        Array of shape (n_atoms, 3) containing the 3D coordinates of each atom.
+    atom_types : numpy.ndarray
+        Array of shape (n_atoms,) containing the atom types as specified in the Mol2 file.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the specified file does not exist.
+    """
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
+
+    atom_types = []
+    coordinates = []
+
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+        atom_section = False
+
+        for line in lines:
+            line = line.strip()
+            # Detect the start of the ATOM section
+            if line == "@<TRIPOS>ATOM":
+                atom_section = True
+                continue
+            # Detect the end of the ATOM section
+            if line == "@<TRIPOS>BOND":
+                break
+            # Process lines in the ATOM section
+            if atom_section:
+                parts = line.split()
+                if len(parts) >= 8:
+                    atom_types.append(parts[5])  # SYBYL atom type is in the 6th column
+                    coordinates.append([float(parts[2]), float(parts[3]), float(parts[4])])  # x, y, z coordinates
+
+    return np.array(coordinates), np.array(atom_types)
+
+
+def parse_mna(file_path: str) -> np.ndarray:
+    """Parses an .mna file to extract atom connectivity.
+
+    Parameters
+    ----------
+    file_path : str
+        Path to the mna file.
+
+    Returns
+    -------
+    numpy.ndarray
+        Array of shape (n_atoms,) containing the atom connectivity.
+    """
+    atom_connectivity = []
+
+    with open(file_path, 'r') as file:
+        for line in file:
+            line = line.strip()
+            if line and not line.startswith("#"):  # Ignore empty lines and comments
+                atom_connectivity.append(line)
+
+    return np.array(atom_connectivity, dtype=str)

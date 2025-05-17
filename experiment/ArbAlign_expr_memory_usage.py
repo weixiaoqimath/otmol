@@ -2,16 +2,8 @@
 # the only change is the way to input information and output information.
 # this script requires python 2.7
 import os
-import sys
-import numpy as np
-import hungarian
-from collections import Counter 
-import operator
-import argparse
 import pandas as pd
 from ArbAlign_expr import main, parse_molecule_pairs
-import resource
-import platform
 import gc
 import psutil
 

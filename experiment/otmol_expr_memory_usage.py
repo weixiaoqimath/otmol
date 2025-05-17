@@ -1,10 +1,8 @@
 import os
-import sys
-import numpy as np
 import otmol as otm
 from openbabel import pybel
 import pandas as pd
-from experiment.experiment_utils import profile_memory
+from experiment_utils import profile_memory
 
 def wc_experiment(
         mol_pair, 

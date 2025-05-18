@@ -6,7 +6,6 @@ import ot
 import numpy as np
 from typing import List, Tuple, Union, Optional
 from scipy.spatial import distance_matrix
-import matplotlib.pyplot as plt
 
 
 def molecule_alignment(
@@ -98,6 +97,11 @@ def molecule_alignment(
             P_ot, _, _ = perform_sOT_log(D_ot, a, b, 1e-3, options)
         if not is_permutation(T_A=T_A, T_B=T_B, perm=np.argmax(P_ot, axis=1), case='single'):
             continue
+
+        # indeed emd always outputs a permutation matrix P_ot, 
+        # so it is not necessary for emd to compute permutation_to_matrix(ot_assignment).
+        ot_assignment = np.argmax(P_ot, axis=1)
+        X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(ot_assignment))
         rmsd = root_mean_square_deviation(X_A, X_B_aligned[np.argmax(P_ot, axis=1)])
         if rmsd < rmsd_best:
             rmsd_best = rmsd
@@ -233,8 +237,9 @@ def cluster_alignment(
                 P_ot, _, _ = perform_sOT_log(D_ot, a, b, reg, options) 
                 if not is_permutation(T_A, T_B, np.argmax(P_ot, axis=1), case = 'molecule cluster', n_atoms = n_atoms):
                     continue
-            X_B_aligned, _, _ = kabsch(X_A, X_B, P_ot)
-            rmsd = root_mean_square_deviation(X_A, X_B_aligned[np.argmax(P_ot, axis=1)])
+            ot_assignment = np.argmax(P_ot, axis=1) 
+            X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(ot_assignment))
+            rmsd = root_mean_square_deviation(X_A, X_B_aligned[ot_assignment])
 
             if rmsd < rmsd_best:
                 rmsd_best = rmsd
@@ -375,4 +380,6 @@ def perturbation_before_gw(
                     unique_perms.add(perm_tuple)
                     list_perms.append(perm)   
     return list_perms
+
+
 

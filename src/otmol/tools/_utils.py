@@ -136,7 +136,7 @@ def parse_molecule_pairs(
     return molecule_pairs
 
 
-def permutation_to_matrix(permutation) -> np.ndarray:
+def permutation_to_matrix(permutation, n: int = None, m: int = None) -> np.ndarray:
     """Convert a permutation list to a permutation matrix.
 
     Parameters
@@ -144,14 +144,22 @@ def permutation_to_matrix(permutation) -> np.ndarray:
     permutation : array_like
         A list or array representing the permutation.
         For example, [2, 0, 1] means index 0 maps to 2, index 1 maps to 0, etc.
+    n : int, optional
+        The number of rows in the matrix.
+    m : int, optional
+        The number of columns in the matrix.
 
     Returns
     -------
     numpy.ndarray
         A permutation matrix where matrix[i, j] = 1 if permutation[i] = j, 0 otherwise.
     """
-    n = len(permutation)
-    matrix = np.zeros((n, n), dtype=int)
+    if n is None and m is None:
+        n = len(permutation)
+        matrix = np.zeros((n, n), dtype=int)
+    else:
+        matrix = np.zeros((n, m), dtype=int)
+
     for i, j in enumerate(permutation):
         matrix[i, j] = 1
     return matrix

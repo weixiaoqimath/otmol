@@ -56,13 +56,16 @@ ATOMIC_PROPERTIES = {
 }
 
 
-def process_molecule(mol: openbabel.OBMol) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def process_molecule(mol: openbabel.OBMol, heavy_atoms_only: bool = False) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Process a molecule object read from an xyz file.
 
     Parameters
     ----------
     mol : openbabel.OBMol
         An OpenBabel molecule object containing the molecular structure.
+    heavy_atoms_only : bool, optional
+        If True, only heavy atoms (non-hydrogen) will be included in the output.
+        Default is False.
 
     Returns
     -------
@@ -97,6 +100,14 @@ def process_molecule(mol: openbabel.OBMol) -> tuple[np.ndarray, np.ndarray, np.n
         atom2 = bond.GetEndAtom()
         B[atom1.GetIdx()-1, atom2.GetIdx()-1] = 1
         B[atom2.GetIdx()-1, atom1.GetIdx()-1] = 1
+    
+    if heavy_atoms_only:
+        # Create mask for non-hydrogen atoms
+        heavy_mask = T != 'H'
+        # Apply mask to all arrays
+        X = X[heavy_mask]
+        T = T[heavy_mask]
+        B = B[heavy_mask, :][:, heavy_mask]
         
     return X, T, B
 
@@ -172,3 +183,6 @@ def parse_mna(file_path: str) -> np.ndarray:
                 atom_connectivity.append(line)
 
     return np.array(atom_connectivity, dtype=str)
+
+
+

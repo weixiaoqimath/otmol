@@ -286,6 +286,7 @@ def add_perturbation(
     noise = rng.normal(0, noise_scale, X.shape)
     return X + noise
 
+
 def normalize_matrix(matrix: np.ndarray) -> np.ndarray:
     """Normalize a matrix by dividing by its maximal non-infinity value.
     

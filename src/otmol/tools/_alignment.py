@@ -51,7 +51,6 @@ def molecule_alignment(
     if molecule_sizes is not None:
         T_A, T_B = add_molecule_indices(T_A, T_B, molecule_sizes)
     C = cost_matrix(T_A = T_A, T_B = T_B, k = np.inf)
-    C = normalize_matrix(C)
 
     C_finite = C.copy()
     C_finite[C_finite == np.inf] = 1e12
@@ -102,10 +101,10 @@ def molecule_alignment(
         # so it is not necessary for emd to compute permutation_to_matrix(ot_assignment).
         ot_assignment = np.argmax(P_ot, axis=1)
         X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(ot_assignment))
-        rmsd = root_mean_square_deviation(X_A, X_B_aligned[np.argmax(P_ot, axis=1)])
+        rmsd = root_mean_square_deviation(X_A, X_B_aligned[ot_assignment])
         if rmsd < rmsd_best:
             rmsd_best = rmsd
-            permutation_best = np.argmax(P_ot, axis=1)
+            permutation_best = ot_assignment
             alpha_best = alpha
     if permutation_best is None:
         raise ValueError('No valid permutation found')
@@ -243,7 +242,7 @@ def cluster_alignment(
 
             if rmsd < rmsd_best:
                 rmsd_best = rmsd
-                permutation_best = np.argmax(P_ot, axis=1)
+                permutation_best = ot_assignment
 
         return permutation_best, rmsd_best        
 

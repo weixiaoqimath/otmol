@@ -1,0 +1,6 @@
+nameA,nameB,RMSD(GW),# atoms
+ALPRAL10_2_fixed_backbone.xyz,CEJSUF_fixed_backbone.xyz,2.846345581622895,16
+CGPGAP10_fixed_backbone.xyz,PAPGAP_fixed_backbone.xyz,0.06982718888465235,20
+BIHXUL10_fixed_backbone.xyz,CINYED_fixed_backbone.xyz,0.107434771084837,24
+LACSUD_fixed_backbone.xyz,TALVAD_fixed_backbone.xyz,0.32215205817009174,28
+EVAPUM_fixed_backbone.xyz,UZUKUW_fixed_backbone.xyz,3.8177406182991893,32

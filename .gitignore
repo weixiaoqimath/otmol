@@ -40,6 +40,9 @@ Thumbs.db
 # Some output files
 images/
 
+# some reference files
+reference/
+
 # some temp files
 misc/
 

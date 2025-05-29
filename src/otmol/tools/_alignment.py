@@ -1,11 +1,13 @@
+from typing import List, Tuple, Union, Optional
+
+import numpy as np
+import ot
+from scipy.spatial import distance_matrix
+
 from .._optimal_transport import fsgw_mvc, perform_sOT_log
 from ._utils import is_permutation, permutation_to_matrix, cost_matrix
 from ._utils import root_mean_square_deviation, add_molecule_indices
 from ._utils import add_perturbation, normalize_matrix, resolve_sinkhorn_conflicts
-import ot
-import numpy as np
-from typing import List, Tuple, Union, Optional
-from scipy.spatial import distance_matrix
 
 
 def molecule_alignment(
@@ -17,6 +19,7 @@ def molecule_alignment(
         alpha_list: list = None, 
         molecule_sizes: List[int] = None,
         reg: float = 1e-2,
+        reflection: bool = True,
         ) -> Tuple[np.ndarray, float, float]:
     """Compute optimal transport and alignment between molecules.
 
@@ -70,13 +73,11 @@ def molecule_alignment(
         if not is_permutation(T_A=T_A, T_B=T_B, perm=assignment, case='single'):
             continue
 
-        # OT
-        X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(assignment))
+        X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(assignment), reflection)
         D_ot = distance_matrix(X_A, X_B_aligned)**2
         D_ot[C == np.inf] = np.inf
-        #mask = np.isfinite(D_ot)
-        #print(np.max(D_ot[mask]))
-        D_ot = normalize_matrix(D_ot)
+        # normalize finite values in D_ot
+        D_ot = normalize_matrix(D_ot) 
         a = np.ones(X_A.shape[0])/X_A.shape[0]
         b = np.ones(X_B.shape[0])/X_B.shape[0]
         if method[1] == 'emd':
@@ -97,17 +98,15 @@ def molecule_alignment(
         if not is_permutation(T_A=T_A, T_B=T_B, perm=np.argmax(P_ot, axis=1), case='single'):
             continue
 
-        # indeed emd always outputs a permutation matrix P_ot, 
-        # so it is not necessary for emd to compute permutation_to_matrix(ot_assignment).
         ot_assignment = np.argmax(P_ot, axis=1)
-        X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(ot_assignment))
+        X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(ot_assignment), reflection)
         rmsd = root_mean_square_deviation(X_A, X_B_aligned[ot_assignment])
         if rmsd < rmsd_best:
             rmsd_best = rmsd
             permutation_best = ot_assignment
             alpha_best = alpha
     if permutation_best is None:
-        raise ValueError('No valid permutation found')
+        print('No valid permutation found')
     return permutation_best, rmsd_best, alpha_best
 
 
@@ -122,7 +121,8 @@ def cluster_alignment(
         reg: float = 1e-2, 
         numItermax: int = 1000, 
         n_atoms: int = None, 
-        molecule_cluster_options: str = 'center',
+        n_trials: int = 500,
+        molecule_cluster_options: str = 'center'
         ):
     """Compute optimal transport and alignment between clusters.
 
@@ -167,7 +167,7 @@ def cluster_alignment(
         for p in p_list:
             D_A = distance_matrix(X_A, X_A)**p
             D_B = distance_matrix(X_B, X_B)**p
-            P = ot.gromov.gromov_wasserstein(D_A/D_A.max(), D_B/D_A.max())
+            P = ot.gromov.gromov_wasserstein(D_A/D_A.max(), D_B/D_A.max(), symmetric=True)
             gw_assignment = np.argmax(P, axis=1)
             if is_permutation(perm=gw_assignment):   
                 X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(gw_assignment))
@@ -196,7 +196,7 @@ def cluster_alignment(
                             permutation_best = ot_assignment
 
         if permutation_best is None:
-            raise ValueError('No valid permutation found')
+            print('No valid permutation found')
         return permutation_best, rmsd_best, p_best
     
     if case == 'molecule cluster':
@@ -204,7 +204,7 @@ def cluster_alignment(
             representative_A, representative_B = X_A.reshape(-1, n_atoms, 3).mean(axis=1), X_B.reshape(-1, n_atoms, 3).mean(axis=1)
         else:
             representative_A, representative_B = X_A[T_A == molecule_cluster_options], X_B[T_B == molecule_cluster_options]
-        list_P = perturbation_before_gw(representative_A, representative_B, p = 1, n_trials = 500, scale = 0.1)
+        list_P = perturbation_before_gw(representative_A, representative_B, p = 1, n_trials = n_trials, scale = 0.1)
         print('The number of candidate molecular level permutations is', len(list_P))
         rmsd_best = 1e10
         permutation_best = None
@@ -239,11 +239,12 @@ def cluster_alignment(
             ot_assignment = np.argmax(P_ot, axis=1) 
             X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(ot_assignment))
             rmsd = root_mean_square_deviation(X_A, X_B_aligned[ot_assignment])
-
             if rmsd < rmsd_best:
                 rmsd_best = rmsd
                 permutation_best = ot_assignment
 
+        if permutation_best is None:
+            print('No valid permutation found')
         return permutation_best, rmsd_best        
 
 def kabsch(
@@ -255,6 +256,8 @@ def kabsch(
     """Kabsch algorithm. 
     Perform rigid body rotation (including reflection if reflection is True), 
     and translation to align molecules.
+    When there is no need to worry about chirality 
+    (e.g. two molecules have the same chirality), reflection is allowed.
 
     Parameters
     ----------
@@ -266,7 +269,7 @@ def kabsch(
         A transport plan describing the correspondence between molecules. 
         In the study of isomers, it should be a permutation matrix.
     reflection : bool, optional
-        Whether to allow reflection, by default True.
+        Whether to allow reflection, by default True. 
 
     Returns
     -------

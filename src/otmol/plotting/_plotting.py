@@ -261,3 +261,6 @@ def interactive_alignment_plot(
     }
     # Show the figure
     fig.show(config=config)
+
+
+

@@ -1,6 +1,6 @@
 from typing import Dict, Tuple, TypedDict, Union
 import numpy as np
-from openbabel import openbabel
+from openbabel import openbabel, pybel
 #from scipy.sparse.csgraph import floyd_warshall
 import os
 
@@ -56,13 +56,13 @@ ATOMIC_PROPERTIES = {
 }
 
 
-def process_molecule(mol: openbabel.OBMol, heavy_atoms_only: bool = False) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def process_molecule(mol: pybel.Molecule, heavy_atoms_only: bool = False) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Process a molecule object read from an xyz file.
 
     Parameters
     ----------
-    mol : openbabel.OBMol
-        An OpenBabel molecule object containing the molecular structure.
+    mol : openbabel.pybel.Molecule
+        An OpenBabel molecule object loaded by pybel.
     heavy_atoms_only : bool, optional
         If True, only heavy atoms (non-hydrogen) will be included in the output.
         Default is False.
@@ -100,6 +100,7 @@ def process_molecule(mol: openbabel.OBMol, heavy_atoms_only: bool = False) -> tu
         atom2 = bond.GetEndAtom()
         B[atom1.GetIdx()-1, atom2.GetIdx()-1] = 1
         B[atom2.GetIdx()-1, atom1.GetIdx()-1] = 1
+        # TODO: bond order, atom connectivity
     
     if heavy_atoms_only:
         # Create mask for non-hydrogen atoms
@@ -113,12 +114,12 @@ def process_molecule(mol: openbabel.OBMol, heavy_atoms_only: bool = False) -> tu
 
 
 def parse_sy2(file_path: str) -> tuple[np.ndarray, np.ndarray]:
-    """Parse a SYBYL Mol2 (.sy2) file to extract coordinates and atom types.
+    """Parse a sy2 file to extract coordinates and atom types.
 
     Parameters
     ----------
     file_path : str
-        Path to the SYBYL Mol2 file.
+        Path to the sy2 file.
 
     Returns
     -------
@@ -185,4 +186,21 @@ def parse_mna(file_path: str) -> np.ndarray:
     return np.array(atom_connectivity, dtype=str)
 
 
+def write_xyz_with_custom_labels(output_file: str, coordinates: np.ndarray, connectivity: np.ndarray):
+    """Write xyz file with coordinates and custom names.
+    Intended for preparing input for ArbAlign.
 
+    Parameters
+    ----------
+    output_file : str
+        Path to the output xyz file.
+    coordinates : np.ndarray
+        Array of shape (n_atoms, 3) containing the 3D coordinates of each atom.
+    connectivity : np.ndarray
+        Array of shape (n_atoms,) containing the SYBYL type or atom connectivity.
+    """
+    with open(output_file, 'w') as f:
+        f.write(f"{coordinates.shape[0]}\n")
+        f.write("Modified xyz file with custom names. Used for ArbAlign.\n")
+        for coord, atom_name in zip(coordinates, connectivity):
+            f.write(f"{atom_name:4s} {coord[0]:12.6f} {coord[1]:12.6f} {coord[2]:12.6f}\n")

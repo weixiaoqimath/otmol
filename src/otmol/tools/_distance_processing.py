@@ -1,5 +1,7 @@
 import numpy as np
 from openbabel import openbabel
+from scipy.spatial import distance_matrix
+from scipy.sparse import csr_array
 from scipy.sparse.csgraph import floyd_warshall
 
 ATOMIC_NAME = {
@@ -50,18 +52,20 @@ ATOMIC_PROPERTIES = {
     "Br": {"en": 2.96, "vdw": 1.85, "cov": 1.14},  # Bromine (Br)
 }
 
+
 def geodesic_distance(
     X,
     B
 ):
-    n = X.shape[0]
-    diff = X[:, np.newaxis, :] - X[np.newaxis, :, :]
-    dists = np.sqrt(np.sum(diff**2, axis=2))    
-    weights = np.where(B, dists, np.inf)
-    np.fill_diagonal(weights, 0)
-    geodesic = floyd_warshall(weights, directed=False)
-
+    """
+    B: adjacency matrix of the graph
+    """
+    dists = distance_matrix(X, X)   
+    graph = np.where(B, dists, 0)
+    graph = csr_array(graph)
+    geodesic = floyd_warshall(graph, directed=False)
     return geodesic
+
 
 def atom_physchem_distance(atomic_type1: str, atomic_type2: str) -> float:
     """

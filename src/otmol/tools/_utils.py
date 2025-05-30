@@ -173,6 +173,9 @@ def is_permutation(
         n_atoms: int = None
         ) -> bool:
     """Check if the given array is a permutation, with optional special cases.
+    If T_A and T_B are provided, check if T_A == T_B[perm].
+    When case = 'single', this function can also be used for a matching between A and B 
+    when the number of atoms in A is less than the number of atoms in B.
 
     Parameters
     ----------

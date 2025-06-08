@@ -5,6 +5,7 @@ import ot
 from scipy.spatial import distance_matrix
 
 from .._optimal_transport import fsgw_mvc, perform_sOT_log
+from ._distance_processing import geodesic_distance
 from ._utils import is_permutation, permutation_to_matrix, cost_matrix
 from ._utils import root_mean_square_deviation, add_molecule_indices
 from ._utils import add_perturbation, normalize_matrix, resolve_sinkhorn_conflicts
@@ -15,11 +16,14 @@ def molecule_alignment(
         X_B, 
         T_A, 
         T_B, 
-        method: List[str] = ['fGW', 'emd'], 
+        B_A: np.ndarray = None,
+        B_B: np.ndarray = None,
+        method: str = 'fGW', 
         alpha_list: list = None, 
         molecule_sizes: List[int] = None,
         reg: float = 1e-2,
         reflection: bool = True,
+        cst_D: float = 0.,
         ) -> Tuple[np.ndarray, float, float]:
     """Compute optimal transport and alignment between molecules.
 
@@ -57,53 +61,39 @@ def molecule_alignment(
 
     C_finite = C.copy()
     C_finite[C_finite == np.inf] = 1e12
-    D_A = distance_matrix(X_A, X_A)
-    D_B = distance_matrix(X_B, X_B)
+    if cst_D < 1e-5:
+        D_A = distance_matrix(X_A, X_A)
+        D_B = distance_matrix(X_B, X_B)
+        D_A, D_B = D_A/D_A.max(), D_B/D_A.max()
+    elif B_A is not None and B_B is not None:
+        Euc_A, Euc_B = distance_matrix(X_A, X_A), distance_matrix(X_B, X_B)
+        Geo_A, Geo_B = geodesic_distance(X_A, B_A), geodesic_distance(X_B, B_B)
+        Euc_A, Euc_B = Euc_A/Euc_A.max(), Euc_B/Euc_A.max()
+        if Geo_A.max() == np.inf:
+            Geo_A[Geo_A == np.inf] = Euc_A[Geo_A == np.inf]
+            Geo_B[Geo_B == np.inf] = Euc_B[Geo_B == np.inf]
+        Geo_A, Geo_B = Geo_A/Geo_A.max(), Geo_B/Geo_B.max()
+        D_A = (1-cst_D)*Euc_A + cst_D*Geo_A
+        D_B = (1-cst_D)*Euc_B + cst_D*Geo_B
+        D_A, D_B = D_A/D_A.max(), D_B/D_A.max()
     rmsd_best = 1e10
     permutation_best = None
     alpha_best = None
     for alpha in alpha_list:
-        if method[0] == 'fGW':
+        if method == 'fGW':
             # Fused Gromov-Wasserstein
-            P = ot.gromov.fused_gromov_wasserstein(C_finite, D_A/D_A.max(), D_B/D_A.max(), alpha=alpha, symmetric=True)
-        elif method[0] == 'fsGW':
+            P = ot.gromov.fused_gromov_wasserstein(C_finite, D_A, D_B, alpha=alpha, symmetric=True)
+        elif method == 'fsGW':
             # Fused Supervised Gromov-Wasserstein
-            P = fsgw_mvc(D_A/D_A.max(), D_B/D_A.max(), M=C, fsgw_alpha=alpha, fsgw_gamma=10, fsgw_niter=10, fsgw_eps=0.001)
+            P = fsgw_mvc(D_A, D_B, M=C, fsgw_alpha=alpha, fsgw_gamma=10, fsgw_niter=10, fsgw_eps=0.001)
         assignment = np.argmax(P, axis=1)
         if not is_permutation(T_A=T_A, T_B=T_B, perm=assignment, case='single'):
             continue
-
         X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(assignment), reflection)
-        D_ot = distance_matrix(X_A, X_B_aligned)**2
-        D_ot[C == np.inf] = np.inf
-        # normalize finite values in D_ot
-        D_ot = normalize_matrix(D_ot) 
-        a = np.ones(X_A.shape[0])/X_A.shape[0]
-        b = np.ones(X_B.shape[0])/X_B.shape[0]
-        if method[1] == 'emd':
-            D_ot[D_ot == np.inf] = 1e12
-            P_ot = ot.emd(a, b, D_ot)
-        if method[1] == 'sinkhorn':
-            D_ot[D_ot == np.inf] = 1e12
-            P_ot = ot.sinkhorn(a, b, D_ot, reg=reg)
-        if method[1] == 'sOT':
-            options = {
-                'niter_sOT': 10**3,
-                'f_init': np.zeros(X_A.shape[0]),
-                'g_init': np.zeros(X_B.shape[0]),
-                'penalty': 10,
-                'stopthr': 1e-8,
-            }
-            P_ot, _, _ = perform_sOT_log(D_ot, a, b, 1e-3, options)
-        if not is_permutation(T_A=T_A, T_B=T_B, perm=np.argmax(P_ot, axis=1), case='single'):
-            continue
-
-        ot_assignment = np.argmax(P_ot, axis=1)
-        X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(ot_assignment), reflection)
-        rmsd = root_mean_square_deviation(X_A, X_B_aligned[ot_assignment])
+        rmsd = root_mean_square_deviation(X_A, X_B_aligned[assignment])
         if rmsd < rmsd_best:
             rmsd_best = rmsd
-            permutation_best = ot_assignment
+            permutation_best = assignment
             alpha_best = alpha
     if permutation_best is None:
         print('No valid permutation found')

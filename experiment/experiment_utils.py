@@ -128,8 +128,7 @@ def experiment(
         reg: float = 1e-2,
         dataset_name: str = None, # FGG, S1MAW1
         save: bool = False, # whether to save the results
-        reflection: bool = True,
-        #plain_GW: bool = False,
+        reflection: bool = False,
         cst_D: float = 0.,
         ):
     results = []
@@ -169,7 +168,14 @@ def experiment(
         #    print(nameA, nameB, f"{rmsd:.2f}")
         #else:
         optimal_assignment, rmsd_best, alpha_best = otm.tl.molecule_alignment(
-            X_A, X_B, T_A, T_B, B_A, B_B, method = method, alpha_list = alpha_list, molecule_sizes = molecule_sizes, reg = reg, reflection = reflection, cst_D = cst_D)
+            X_A, X_B, T_A, T_B, B_A, B_B, 
+            method = method, 
+            alpha_list = alpha_list, 
+            molecule_sizes = molecule_sizes, 
+            reg = reg, 
+            reflection = reflection, 
+            cst_D = cst_D
+            )
                 
         if not otm.tl.is_permutation(T_A = T_A, T_B = T_B, perm = optimal_assignment, case = 'single'): 
             print(nameA, nameB, 'Warning: not a proper permutation')

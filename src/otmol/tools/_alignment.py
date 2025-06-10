@@ -22,7 +22,7 @@ def molecule_alignment(
         alpha_list: list = None, 
         molecule_sizes: List[int] = None,
         reg: float = 1e-2,
-        reflection: bool = True,
+        reflection: bool = False,
         cst_D: float = 0.,
         ) -> Tuple[np.ndarray, float, float]:
     """Compute optimal transport and alignment between molecules.

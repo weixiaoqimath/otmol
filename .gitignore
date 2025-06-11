@@ -39,6 +39,7 @@ Thumbs.db
 
 # Some output files
 images/
+experiment/_private/
 
 # some reference files
 reference/

@@ -656,7 +656,7 @@ def run_arbalign(xyz1_path, xyz2_path, simple=False, noHydrogens=False, verbose=
 
 if __name__ == "__main__":
 
-   if True:
+   if False:
       result = []
       data_path = "../Data/Our_Benchmark_20250410_ver1/Cyclic_Peptide/Backbone_Most_Similar"
       info = pd.read_csv('../Data/Our_Benchmark_20250410_ver1/Cyclic_Peptide/Backbone_Most_similar_dihedral_angle.csv')
@@ -675,7 +675,7 @@ if __name__ == "__main__":
          })
       pd.DataFrame(result).to_csv(('./arbalign_output/no_reflection/cp_most_similar_result.csv'), index=False)
 
-   if True:
+   if False:
       result = []
       data_path = "../Data/Our_Benchmark_20250410_ver1/Cyclic_Peptide/Backbone_Most_Different"
       info = pd.read_csv('../Data/Our_Benchmark_20250410_ver1/Cyclic_Peptide/Backbone_Most_different_dihedral_angle.csv')
@@ -694,7 +694,7 @@ if __name__ == "__main__":
          })
       pd.DataFrame(result).to_csv(('./arbalign_output/no_reflection/cp_most_different_result.csv'), index=False)
 
-   if True:
+   if False:
       result = []
       data_path = "../Data/Our_Benchmark_20250410_ver1/Cyclic_Peptide/All_Backbone_XYZs"
       info = pd.read_csv('../Data/Our_Benchmark_20250410_ver1/Cyclic_Peptide/All_Backbone_Largest_RMSD_Pair.csv')
@@ -713,7 +713,7 @@ if __name__ == "__main__":
          })
       pd.DataFrame(result).to_csv(('./arbalign_output/no_reflection/cp_largest_arbalign_result.csv'), index=False)
          
-   if True:
+   if False:
       result = []
       data_path = "../Data/FGG-Tripeptide"
       mol_pair_list_path = os.path.join(data_path, 'list')
@@ -753,7 +753,7 @@ if __name__ == "__main__":
       pd.DataFrame(result).to_csv(('./arbalign_output/no_reflection/FGG_result.csv'), index=False)
       
 
-   if True:
+   if False:
       result = []
       data_path = "../Data/S1-MA-W1"
       mol_pair_list_path = os.path.join(data_path, 'list')
@@ -792,74 +792,6 @@ if __name__ == "__main__":
          })
       pd.DataFrame(result).to_csv(('./arbalign_output/no_reflection/S1MAW1_result.csv'), index=False)
 
-
-   if False:
-      result = []
-      data_path = "../Data/Water-Clusters"
-      mol_pair_list_path = os.path.join(data_path, 'list')
-      molecule_pairs = parse_molecule_pairs(mol_pair_list_path, mol_type='water cluster')
-      for nameA, nameB in molecule_pairs:
-         start_time = time.time()
-         RMSD = run_arbalign(
-         xyz1_path= os.path.join(data_path, nameA+'.xyz'),
-         xyz2_path= os.path.join(data_path, nameB+'.xyz'),
-         simple=False,  # Set to True for faster but less thorough alignment
-         noHydrogens=False,  # Set to True to ignore hydrogen atoms
-         verbose=False  # Set to True to see detailed output
-         )
-         end_time = time.time()
-         result.append({
-            'nameA': nameA,
-            'nameB': nameB,
-            'RMSD(ArbAlign)': RMSD,
-            'time': end_time - start_time
-         })
-      pd.DataFrame(result).to_csv(('./arbalign_output/ArbAlignDataWC_result.csv'), index=False)
-   
-   if False:
-      result = []
-      group1_data_path = "../Data/Our_Benchmark_20250410_ver1/Water_Cluster_3_30/water_xyz_output_1st_2nd"
-      group1_info = pd.read_csv('../Data/Our_Benchmark_20250410_ver1/Water_Cluster_3_30/water_cluster_1st_2nd_lowest_energy.csv')
-      for nameA, nameB in zip(group1_info['Reference'], group1_info['Target']):
-         start_time = time.time()
-         RMSD = run_arbalign(
-         xyz1_path= os.path.join(group1_data_path, nameA),
-         xyz2_path= os.path.join(group1_data_path, nameB),
-         simple=False,  # Set to True for faster but less thorough alignment
-         noHydrogens=False,  # Set to True to ignore hydrogen atoms
-         verbose=False  # Set to True to see detailed output
-         )
-         end_time = time.time()
-         result.append({
-            'nameA': nameA,
-            'nameB': nameB,
-            'RMSD(ArbAlign)': RMSD,
-            'time': end_time - start_time
-         })
-      pd.DataFrame(result).to_csv(('./arbalign_output/1st2ndWC_result.csv'), index=False)
-   
-   if False:
-      result = []
-      group2_data_path = "../Data/Our_Benchmark_20250410_ver1/Water_Cluster_3_30/water_xyz_output_1st_to_20th"
-      group2_info = pd.read_csv('../Data/Our_Benchmark_20250410_ver1/Water_Cluster_3_30/water_cluster_largest_RMSD_pair_among_20_lowest_energy.csv')
-      for nameA, nameB in zip(group2_info['Reference'], group2_info['Target']):
-         start_time = time.time()
-         RMSD = run_arbalign(
-         xyz1_path= os.path.join(group2_data_path, nameA),
-         xyz2_path= os.path.join(group2_data_path, nameB),
-         simple=False,  # Set to True for faster but less thorough alignment
-         noHydrogens=False,  # Set to True to ignore hydrogen atoms
-         verbose=False  # Set to True to see detailed output
-         )
-         end_time = time.time()
-         result.append({
-            'nameA': nameA,
-            'nameB': nameB,
-            'RMSD(ArbAlign)': RMSD,
-            'time': end_time - start_time
-         })
-      pd.DataFrame(result).to_csv(('./arbalign_output/largest_RMSD_WC_result.csv'), index=False)
-
    if False:
       result = []
       data_path = "../Data/Neon-Clusters"
@@ -881,5 +813,72 @@ if __name__ == "__main__":
             'RMSD(ArbAlign)': RMSD,
             'time': end_time - start_time
          })
-      pd.DataFrame(result).to_csv(('./arbalign_output/NeonCluster_result.csv'), index=False)
-      
+      pd.DataFrame(result).to_csv(('./arbalign_output/no_reflection/NeonCluster_result.csv'), index=False)
+
+
+   if True:
+      result = []
+      data_path = "../Data/Water-Clusters"
+      mol_pair_list_path = os.path.join(data_path, 'list')
+      molecule_pairs = parse_molecule_pairs(mol_pair_list_path, mol_type='water cluster')
+      for nameA, nameB in molecule_pairs:
+         start_time = time.time()
+         RMSD = run_arbalign(
+         xyz1_path= os.path.join(data_path, nameA+'.xyz'),
+         xyz2_path= os.path.join(data_path, nameB+'.xyz'),
+         simple=False,  # Set to True for faster but less thorough alignment
+         noHydrogens=False,  # Set to True to ignore hydrogen atoms
+         verbose=False  # Set to True to see detailed output
+         )
+         end_time = time.time()
+         result.append({
+            'nameA': nameA,
+            'nameB': nameB,
+            'RMSD(ArbAlign)': RMSD,
+            'time': end_time - start_time
+         })
+      pd.DataFrame(result).to_csv(('./arbalign_output/no_reflection/ArbAlignDataWC_result.csv'), index=False)
+   
+   if False:
+      result = []
+      group1_data_path = "../Data/Our_Benchmark_20250410_ver1/Water_Cluster_3_30/water_xyz_output_1st_2nd"
+      group1_info = pd.read_csv('../Data/Our_Benchmark_20250410_ver1/Water_Cluster_3_30/water_cluster_1st_2nd_lowest_energy.csv')
+      for nameA, nameB in zip(group1_info['Reference'], group1_info['Target']):
+         start_time = time.time()
+         RMSD = run_arbalign(
+         xyz1_path= os.path.join(group1_data_path, nameA),
+         xyz2_path= os.path.join(group1_data_path, nameB),
+         simple=False,  # Set to True for faster but less thorough alignment
+         noHydrogens=False,  # Set to True to ignore hydrogen atoms
+         verbose=False  # Set to True to see detailed output
+         )
+         end_time = time.time()
+         result.append({
+            'nameA': nameA,
+            'nameB': nameB,
+            'RMSD(ArbAlign)': RMSD,
+            'time': end_time - start_time
+         })
+      pd.DataFrame(result).to_csv(('./arbalign_output/no_reflection/1st2ndWC_result.csv'), index=False)
+   
+   if False:
+      result = []
+      group2_data_path = "../Data/Our_Benchmark_20250410_ver1/Water_Cluster_3_30/water_xyz_output_1st_to_20th"
+      group2_info = pd.read_csv('../Data/Our_Benchmark_20250410_ver1/Water_Cluster_3_30/water_cluster_largest_RMSD_pair_among_20_lowest_energy.csv')
+      for nameA, nameB in zip(group2_info['Reference'], group2_info['Target']):
+         start_time = time.time()
+         RMSD = run_arbalign(
+         xyz1_path= os.path.join(group2_data_path, nameA),
+         xyz2_path= os.path.join(group2_data_path, nameB),
+         simple=False,  # Set to True for faster but less thorough alignment
+         noHydrogens=False,  # Set to True to ignore hydrogen atoms
+         verbose=False  # Set to True to see detailed output
+         )
+         end_time = time.time()
+         result.append({
+            'nameA': nameA,
+            'nameB': nameB,
+            'RMSD(ArbAlign)': RMSD,
+            'time': end_time - start_time
+         })
+      pd.DataFrame(result).to_csv(('./arbalign_output/no_reflection/largest_RMSD_WC_result.csv'), index=False)

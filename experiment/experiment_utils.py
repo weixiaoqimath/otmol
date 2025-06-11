@@ -16,7 +16,7 @@ def wc_experiment(mol_pair,
                molecule_cluster_options: str = 'center',
                dataset_name: str = None, # ArbAlignDataWC, 1st2nd, Largest_RMSD
                save: bool = False, # whether to save the results
-               plain_GW: bool = False,
+               n_trials: int = 300,
                ):
     results = []
     # Load the molecule pairs from the specified file
@@ -27,39 +27,42 @@ def wc_experiment(mol_pair,
         molB = next(pybel.readfile('xyz', os.path.join(data_path, nameB)))
         X_A, T_A, _ = otm.tl.process_molecule(molA) 
         X_B, T_B, _ = otm.tl.process_molecule(molB)
-        if plain_GW:
-            rmsd = GW_alignment(X_A, X_B, T_A, T_B)
-            results.append({
-                'nameA': nameA,
-                'nameB': nameB,
-                'RMSD(GW)': rmsd,
-                '# atoms': X_A.shape[0],
-            }) 
-            print(nameA, nameB, f"{rmsd:.2f}")
-        else:
-            optimal_assignment, rmsd_best = otm.tl.cluster_alignment(X_A, X_B, T_A, T_B, case = 'molecule cluster', method = method, n_atoms = n_atoms, reg = reg, numItermax = numItermax, molecule_cluster_options = molecule_cluster_options)
+        #if plain_GW:
+        #    rmsd = GW_alignment(X_A, X_B, T_A, T_B)
+        #    results.append({
+        #        'nameA': nameA,
+        #        'nameB': nameB,
+        #        'RMSD(GW)': rmsd,
+        #        '# atoms': X_A.shape[0],
+        #    }) 
+        #    print(nameA, nameB, f"{rmsd:.2f}")
+        #else:
+        optimal_assignment, rmsd_best = otm.tl.cluster_alignment(
+            X_A, X_B, T_A, T_B, case = 'molecule cluster', 
+            method = method, n_atoms = n_atoms, 
+            reg = reg, numItermax = numItermax, 
+            molecule_cluster_options = molecule_cluster_options,
+            n_trials = n_trials)
             
-            end_time = time.time()
+        end_time = time.time()
 
-            if not otm.tl.is_permutation(T_A, T_B, optimal_assignment, 'molecule cluster', n_atoms = n_atoms):
-                print(nameA, nameB, 'Warning: the assignment is not a water cluster permutation')
+        if not otm.tl.is_permutation(T_A, T_B, optimal_assignment, 'molecule cluster', n_atoms = n_atoms):
+            print(nameA, nameB, 'Warning: the assignment is not a water cluster permutation')
 
-            results.append({
+        results.append({
                 'nameA': nameA,
                 'nameB': nameB,
-                'method': method,
+                'representation': molecule_cluster_options,
                 'RMSD(OTMol)': rmsd_best,
-                '# atoms': X_A.shape[0],
+                '#': X_A.shape[0]//3,
                 'time': end_time - start_time,
                 'assignment': optimal_assignment,
             }) 
-            print(nameA, nameB, method, f"{rmsd_best:.2f}", f"{end_time - start_time:.2f}s")
+        print(nameA, nameB, method, f"{rmsd_best:.2f}", f"{end_time - start_time:.2f}s")
     
     results_df = pd.DataFrame(results)
-    if save == True and not plain_GW:
-        results_df.to_csv(os.path.join('./otmol_output', f'wc_{dataset_name}_{method}_results.csv'), index=False)
-    if save == True and plain_GW:
-        results_df.to_csv(os.path.join('./GW_output', f'wc_{dataset_name}_results.csv'), index=False)
+    if save == True:
+        results_df.to_csv(os.path.join('./otmol_output', f'wc_{dataset_name}_{molecule_cluster_options}_results.csv'), index=False)
     return results_df
 
 
@@ -71,6 +74,8 @@ def ng_experiment(mol_pair,
                numItermax: int = 10000,
                save: bool = False, # whether to save the results
                plain_GW: bool = False,
+               n_trials: int = 100,
+               perturbation: bool = False,
                ):
     results = []
     # Load the molecule pairs from the specified file
@@ -81,40 +86,32 @@ def ng_experiment(mol_pair,
         molB = next(pybel.readfile('xyz', os.path.join(data_path, nameB + '.xyz')))
         X_A, T_A, _ = otm.tl.process_molecule(molA) 
         X_B, T_B, _ = otm.tl.process_molecule(molB)
-        if plain_GW:
-            rmsd = GW_alignment(X_A, X_B, T_A, T_B)
-            results.append({
-                'nameA': nameA,
-                'nameB': nameB,
-                'RMSD(GW)': rmsd,
-                '# atoms': X_A.shape[0],
-            }) 
-            print(nameA, nameB, f"{rmsd:.2f}")
-        else:
+        if not perturbation:
             optimal_assignment, rmsd_best, p_best = otm.tl.cluster_alignment(X_A = X_A, X_B = X_B, case = 'same element', method = method, p_list = p_list, reg = reg, numItermax = numItermax)
+        else:
+            optimal_assignment, rmsd_best = otm.tl.perturbation_before_gw(X_A = X_A, X_B = X_B, n_trials = n_trials, return_best = True, scale = None)
         
-            end_time = time.time()
+        end_time = time.time()
+        if not otm.tl.is_permutation(perm=optimal_assignment):
+            print(nameA, nameB, 'Warning: the assignment is not 1 to 1')
 
-            if not otm.tl.is_permutation(perm=optimal_assignment):
-                print(nameA, nameB, 'Warning: the assignment is not 1 to 1')
-
-            results.append({
-                'nameA': nameA,
-                'nameB': nameB,
-                'method': method,
-                'RMSD(OTMol)': rmsd_best,
-                '# atoms': X_A.shape[0],
-                'time': end_time - start_time,
-                'p': p_best,
-                'assignment': optimal_assignment,
+        results.append({
+            'nameA': nameA,
+            'nameB': nameB,
+            'method': method,
+            'RMSD(OTMol)': rmsd_best,
+            '# atoms': X_A.shape[0],
+            'time': end_time - start_time,
+            #'p': p_best,
+            'assignment': optimal_assignment,
             }) 
-            print(nameA, nameB, method, f"{rmsd_best:.2f}", f"{end_time - start_time:.2f}s")
+        print(nameA, nameB, method, f"{rmsd_best:.2f}", f"{end_time - start_time:.2f}s")
     
     results_df = pd.DataFrame(results)
-    if save == True and not plain_GW:
+    if save == True:
         results_df.to_csv(os.path.join('./otmol_output', f'ng_{method}_results.csv'), index=False)
-    if save == True and plain_GW:
-        results_df.to_csv(os.path.join('./GW_output', f'ng_results.csv'), index=False)
+    #if save == True and plain_GW:
+    #    results_df.to_csv(os.path.join('./GW_output', f'ng_results.csv'), index=False)
     return results_df
 
 
@@ -125,10 +122,8 @@ def experiment(
         method: str = 'fGW', 
         alpha_list: list = None,
         molecule_sizes: List[int] = None,
-        reg: float = 1e-2,
         dataset_name: str = None, # FGG, S1MAW1
         save: bool = False, # whether to save the results
-        reflection: bool = False,
         cst_D: float = 0.,
         ):
     results = []
@@ -172,8 +167,6 @@ def experiment(
             method = method, 
             alpha_list = alpha_list, 
             molecule_sizes = molecule_sizes, 
-            reg = reg, 
-            reflection = reflection, 
             cst_D = cst_D
             )
                 
@@ -210,7 +203,6 @@ def alpha_experiment(
         setup: str = 'element name',
         method: str = 'fGW', 
         alpha_list: list = np.linspace(0, 1, 101),
-        reflection: bool = True,
         dataset_name: str = None,
         cst_D: float = 0.5,
         ):  
@@ -239,7 +231,7 @@ def alpha_experiment(
         T_A = otm.tl.parse_mna(os.path.join(data_path, nameA + '.mna'))
         T_B = otm.tl.parse_mna(os.path.join(data_path, nameB + '.mna'))
     for alpha in alpha_list:
-        assignment, rmsd, _ = otm.tl.molecule_alignment(X_A, X_B, T_A, T_B, B_A = B_A, B_B = B_B, method = method, alpha_list = [alpha], reflection = reflection, cst_D = cst_D)
+        assignment, rmsd, _ = otm.tl.molecule_alignment(X_A, X_B, T_A, T_B, B_A = B_A, B_B = B_B, method = method, alpha_list = [alpha], cst_D = cst_D)
         if rmsd > 100:
             print(alpha)
             continue
@@ -308,7 +300,6 @@ def cp_experiment(
         alpha_list: list = None,
         dataset_name: str = None,
         save: bool = False,
-        #plain_GW: bool = False,
         cst_D: float = 0.,
         ):
     results = []

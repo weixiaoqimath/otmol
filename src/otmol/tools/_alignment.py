@@ -21,7 +21,6 @@ def molecule_alignment(
         method: str = 'fGW', 
         alpha_list: list = None, 
         molecule_sizes: List[int] = None,
-        reg: float = 1e-2,
         reflection: bool = False,
         cst_D: float = 0.,
         ) -> Tuple[np.ndarray, float, float]:
@@ -112,7 +111,8 @@ def cluster_alignment(
         numItermax: int = 1000, 
         n_atoms: int = None, 
         n_trials: int = 500,
-        molecule_cluster_options: str = 'center'
+        molecule_cluster_options: str = 'center',
+        reflection: bool = False,
         ):
     """Compute optimal transport and alignment between clusters.
 
@@ -154,31 +154,34 @@ def cluster_alignment(
         rmsd_best = 1e10
         p_best = None
         permutation_best = None
+        a = np.ones(X_A.shape[0])/X_A.shape[0]
+        b = np.ones(X_B.shape[0])/X_B.shape[0]
+        Euc_A, Euc_B = distance_matrix(X_A, X_A), distance_matrix(X_B, X_B)
         for p in p_list:
-            D_A = distance_matrix(X_A, X_A)**p
-            D_B = distance_matrix(X_B, X_B)**p
-            P = ot.gromov.gromov_wasserstein(D_A/D_A.max(), D_B/D_A.max(), symmetric=True)
+            D_A = Euc_A**p
+            D_B = Euc_B**p
+            D_A, D_B = D_A/D_A.max(), D_B/D_A.max()
+            P = ot.gromov.gromov_wasserstein(D_A, D_B, symmetric=True)
             gw_assignment = np.argmax(P, axis=1)
             if is_permutation(perm=gw_assignment):   
-                X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(gw_assignment))
-                a = np.ones(X_A.shape[0])/X_A.shape[0]
-                b = np.ones(X_B.shape[0])/X_B.shape[0]
+                X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(gw_assignment), reflection)
+                D_ot = distance_matrix(X_A, X_B_aligned)**2
                 if method == 'emd':
-                    P_ot = ot.emd(a, b, normalize_matrix(distance_matrix(X_A, X_B_aligned)**2))
+                    P_ot = ot.emd(a, b, D_ot/D_ot.max())
                     ot_assignment = np.argmax(P_ot, axis=1)
-                    X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(ot_assignment))
+                    X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(ot_assignment), reflection)
                     rmsd = root_mean_square_deviation(X_A, X_B_aligned[ot_assignment])
                     if rmsd < rmsd_best:
                         rmsd_best = rmsd
                         p_best = p
                         permutation_best = ot_assignment
                 if method == 'sinkhorn': # sinkhorn may not always output a permutation matrix
-                    P_ot = ot.sinkhorn(a, b, normalize_matrix(distance_matrix(X_A, X_B_aligned)**2), reg=reg, numItermax=numItermax)
+                    P_ot = ot.sinkhorn(a, b, D_ot/D_ot.max(), reg=reg, numItermax=numItermax)
                     assignments = resolve_sinkhorn_conflicts(P_ot)
                     if assignments is None:
                         continue
                     for ot_assignment in assignments:
-                        X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(ot_assignment))
+                        X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(ot_assignment), reflection)
                         rmsd = root_mean_square_deviation(X_A, X_B_aligned[ot_assignment])
                         if rmsd < rmsd_best:
                             rmsd_best = rmsd
@@ -194,14 +197,15 @@ def cluster_alignment(
             representative_A, representative_B = X_A.reshape(-1, n_atoms, 3).mean(axis=1), X_B.reshape(-1, n_atoms, 3).mean(axis=1)
         else:
             representative_A, representative_B = X_A[T_A == molecule_cluster_options], X_B[T_B == molecule_cluster_options]
-        list_P = perturbation_before_gw(representative_A, representative_B, p = 1, n_trials = n_trials, scale = 0.1)
+        list_P = perturbation_before_gw(representative_A, representative_B, p_list = [1], n_trials = n_trials, scale = 0.1)
         print('The number of candidate molecular level permutations is', len(list_P))
         rmsd_best = 1e10
         permutation_best = None
+        #c_A, c_B = np.sum(X_A, axis=0)/X_A.shape[0], np.sum(X_B, axis=0)/X_B.shape[0]
         for perm in list_P:
             P = permutation_to_matrix(perm)
-            _, R, t = kabsch(representative_A, representative_B, P)
-            X_B_aligned = (R @ X_B.T).T + t
+            _, R, t = kabsch(representative_A, representative_B, P, reflection)
+            X_B_aligned = (R @ X_B.T).T + t # or + c_A - R @ c_B, but seems no difference in the results
             a, b = np.ones(X_A.shape[0])/X_A.shape[0], np.ones(X_B.shape[0])/X_B.shape[0]
             # construct a distance matrix such that one water molecule is mapped to another according to P
             D_ot = np.full((X_A.shape[0], X_B.shape[0]), np.inf)
@@ -227,7 +231,7 @@ def cluster_alignment(
                 if not is_permutation(T_A, T_B, np.argmax(P_ot, axis=1), case = 'molecule cluster', n_atoms = n_atoms):
                     continue
             ot_assignment = np.argmax(P_ot, axis=1) 
-            X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(ot_assignment))
+            X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(ot_assignment), reflection)
             rmsd = root_mean_square_deviation(X_A, X_B_aligned[ot_assignment])
             if rmsd < rmsd_best:
                 rmsd_best = rmsd
@@ -241,7 +245,7 @@ def kabsch(
     X1: np.ndarray,
     X2: np.ndarray,
     P: np.ndarray,
-    reflection: bool = True
+    reflection: bool = False
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Kabsch algorithm. 
     Perform rigid body rotation (including reflection if reflection is True), 
@@ -290,10 +294,10 @@ def kabsch(
     # Compute SVD of H
     U, _, Vt = np.linalg.svd(H)
     
-    # Allow reflection by not enforcing det(R)==1
-    R = U @ Vt
-    if not reflection and np.linalg.det(R) < 0: # Ensure R is a proper rotation matrix (det(R)=1)
+    if not reflection and np.linalg.det(U @ Vt) < 0: # Ensure R is a proper rotation matrix (det(R)=1)
         Vt[-1, :] *= -1
+        R = U @ Vt
+    else:
         R = U @ Vt
         
     # Compute the translation
@@ -308,10 +312,10 @@ def kabsch(
 def perturbation_before_gw(
         X_A: np.ndarray, 
         X_B: np.ndarray, 
-        p: float = 1, 
+        p_list: list = [1], 
         n_trials: int = 100, 
         scale: float = 0.1, 
-        threshold: float = None
+        return_best: bool = False,
         ) -> List[np.ndarray]:
     """Find various suboptimal transport plans between clusters of atoms.
 
@@ -325,14 +329,12 @@ def perturbation_before_gw(
         Coordinates of cluster A.
     X_B : numpy.ndarray
         Coordinates of cluster B.
-    p : float, optional
-        Power of the distance matrix, by default 1.
+    p_list : list, 
+        Power of the distance matrix, by default [1].
     n_trials : int, optional
         Number of trials to run, by default 100.
     scale : float, optional
         Standard deviation of the Gaussian noise, by default 0.1.
-    threshold : float, optional
-        RMSD threshold for accepting a permutation, by default None.
 
     Returns
     -------
@@ -341,37 +343,58 @@ def perturbation_before_gw(
     """
     unique_perms = set()
     list_perms = []
+    rmsd_best = 1e10
+    perm_best = None
 
     # It seems that when the number of atoms is 2, the GW algorithm always returns the permutation [0,1] regardless of the input.
     # So we handle this case separately.
     if len(X_A) == 2:
-        return [np.array([0,1]), np.array([1,0])]
+        list_perms = [np.array([0,1]), np.array([1,0])]
+        if return_best:
+            for perm in list_perms:
+                X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(perm), reflection=False)
+                rmsd = root_mean_square_deviation(X_A, X_B_aligned[perm])
+                if rmsd < rmsd_best:
+                    rmsd_best = rmsd
+                    perm_best = perm
+            return perm_best, rmsd_best
+        else:
+            return list_perms
               
     for i in range(n_trials):
         X_A_perturbed, X_B_perturbed = add_perturbation(X_A, scale, random_state = i), add_perturbation(X_B, scale, random_state = i)
-        D_A = distance_matrix(X_A_perturbed, X_A_perturbed)**p
-        D_B = distance_matrix(X_B_perturbed, X_B_perturbed)**p
-        P_gw = ot.gromov.gromov_wasserstein(D_A/D_A.max(), D_B/D_A.max(), symmetric=True)
-        if len(np.unique(np.argmax(P_gw, axis=1))) == P_gw.shape[0]:
-            X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(np.argmax(P_gw, axis=1)))
+        Euc_A, Euc_B = distance_matrix(X_A_perturbed, X_A_perturbed), distance_matrix(X_B_perturbed, X_B_perturbed)
+        for p in p_list:
+            D_A = Euc_A**p
+            D_B = Euc_B**p
+            D_A, D_B = D_A/D_A.max(), D_B/D_A.max()
+            P = ot.gromov.gromov_wasserstein(D_A, D_B, symmetric=True)
+            perm = np.argmax(P, axis=1)
+            if not is_permutation(perm=perm):
+                continue
+            X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(np.argmax(P, axis=1)), reflection=False)
             D_ot = distance_matrix(X_A, X_B_aligned)**2
-            P_ot = ot.emd([], [], normalize_matrix(D_ot))
-            X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(np.argmax(P_ot, axis=1)))
-            if threshold is None:
-                perm = np.argmax(P_ot, axis=1)
+            P = ot.emd([], [], D_ot/D_ot.max())
+            perm = np.argmax(P, axis=1)
+            if not is_permutation(perm=perm):
+                continue
+            if not return_best:
                 # Check for uniqueness
                 perm_tuple = tuple(perm)
                 if perm_tuple not in unique_perms:
                     unique_perms.add(perm_tuple)
                     list_perms.append(perm)                
-            elif root_mean_square_deviation(X_A, X_B_aligned[np.argmax(P_ot, axis=1)]) < threshold:
-                perm = np.argmax(P_ot, axis=1)
-                # Check for uniqueness
-                perm_tuple = tuple(perm)
-                if perm_tuple not in unique_perms:
-                    unique_perms.add(perm_tuple)
-                    list_perms.append(perm)   
-    return list_perms
+            #elif root_mean_square_deviation(X_A, X_B_aligned[np.argmax(P_ot, axis=1)]) < threshold:
+            if return_best:
+                X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(perm), reflection=False)
+                rmsd = root_mean_square_deviation(X_A, X_B_aligned[perm])
+                if rmsd < rmsd_best:
+                    rmsd_best = rmsd
+                    perm_best = perm
+    if return_best:
+        return perm_best, rmsd_best
+    else:
+        return list_perms
 
 
 

@@ -315,7 +315,6 @@ def perturbation_before_gw(
         p_list: list = [1], 
         n_trials: int = 100, 
         scale: float = 0.1, 
-        return_best: bool = False,
         ) -> List[np.ndarray]:
     """Find various suboptimal transport plans between clusters of atoms.
 
@@ -343,24 +342,12 @@ def perturbation_before_gw(
     """
     unique_perms = set()
     list_perms = []
-    rmsd_best = 1e10
-    perm_best = None
-
     # It seems that when the number of atoms is 2, the GW algorithm always returns the permutation [0,1] regardless of the input.
     # So we handle this case separately.
     if len(X_A) == 2:
         list_perms = [np.array([0,1]), np.array([1,0])]
-        if return_best:
-            for perm in list_perms:
-                X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(perm), reflection=False)
-                rmsd = root_mean_square_deviation(X_A, X_B_aligned[perm])
-                if rmsd < rmsd_best:
-                    rmsd_best = rmsd
-                    perm_best = perm
-            return perm_best, rmsd_best
-        else:
-            return list_perms
-              
+        return list_perms
+  
     for i in range(n_trials):
         X_A_perturbed, X_B_perturbed = add_perturbation(X_A, scale, random_state = i), add_perturbation(X_B, scale, random_state = i)
         Euc_A, Euc_B = distance_matrix(X_A_perturbed, X_A_perturbed), distance_matrix(X_B_perturbed, X_B_perturbed)
@@ -372,29 +359,17 @@ def perturbation_before_gw(
             perm = np.argmax(P, axis=1)
             if not is_permutation(perm=perm):
                 continue
-            X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(np.argmax(P, axis=1)), reflection=False)
+            X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(perm), reflection=False)
             D_ot = distance_matrix(X_A, X_B_aligned)**2
             P = ot.emd([], [], D_ot/D_ot.max())
             perm = np.argmax(P, axis=1)
             if not is_permutation(perm=perm):
                 continue
-            if not return_best:
-                # Check for uniqueness
-                perm_tuple = tuple(perm)
-                if perm_tuple not in unique_perms:
-                    unique_perms.add(perm_tuple)
-                    list_perms.append(perm)                
-            #elif root_mean_square_deviation(X_A, X_B_aligned[np.argmax(P_ot, axis=1)]) < threshold:
-            if return_best:
-                X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(perm), reflection=False)
-                rmsd = root_mean_square_deviation(X_A, X_B_aligned[perm])
-                if rmsd < rmsd_best:
-                    rmsd_best = rmsd
-                    perm_best = perm
-    if return_best:
-        return perm_best, rmsd_best
-    else:
-        return list_perms
+            perm_tuple = tuple(perm)
+            if perm_tuple not in unique_perms:
+                unique_perms.add(perm_tuple)
+                list_perms.append(perm)                
+    return list_perms
 
 
 

@@ -1,7 +1,7 @@
 <html>
 <body style="margin: 0; padding: 0; display: block;">
-<div id="3dmolviewer_1749583468635093"  style="position: relative; width: 800px; height: 600px;">
-        <p id="3dmolwarning_1749583468635093" style="background-color:#ffcccc;color:black">3Dmol.js failed to load for some reason.  Please check your browser console for error messages.<br></p>
+<div id="3dmolviewer_1750203873218844"  style="position: relative; width: 800px; height: 600px;">
+        <p id="3dmolwarning_1750203873218844" style="background-color:#ffcccc;color:black">3Dmol.js failed to load for some reason.  Please check your browser console for error messages.<br></p>
         </div>
 <script>
 
@@ -32,37 +32,53 @@ $3Dmolpromise = null;
   $3Dmolpromise = loadScriptAsync('https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.4.2/3Dmol-min.js');
 }
 
-var viewer_1749583468635093 = null;
-var warn = document.getElementById("3dmolwarning_1749583468635093");
+var viewer_1750203873218844 = null;
+var warn = document.getElementById("3dmolwarning_1750203873218844");
 if(warn) {
     warn.parentNode.removeChild(warn);
 }
 $3Dmolpromise.then(function() {
-viewer_1749583468635093 = $3Dmol.createViewer(document.getElementById("3dmolviewer_1749583468635093"),{backgroundColor:"white"});
-viewer_1749583468635093.zoomTo();
-	viewer_1749583468635093.addModel("16\nALPRAL10_2\nN    2.605    7.268    8.993\nC    2.496    7.668    7.588\nC    2.966    6.517    6.732\nO    4.014    6.588    6.085\nN    2.199    5.401    6.687\nC    0.901    5.221    7.312\nC    0.919    4.647    8.754\nO   -0.131    4.583    9.352\nN    2.090    4.247    9.240\nC    2.231    3.781   10.624\nC    3.250    4.676   11.376\nO    4.237    4.178   11.903\nN    3.046    5.999   11.421\nC    1.759    6.672   11.221\nC    1.564    7.328    9.847\nO    0.496    7.868    9.593\n","xyz");
-	viewer_1749583468635093.addModel("16\nCEJSUF\nN    2.352    7.227    8.658\nC    2.346    7.352    7.205\nC    3.071    6.159    6.578\nO    3.999    6.286    5.817\nN    2.636    4.902    6.936\nC    1.234    7.270    9.399\nC    1.323    4.560    7.484\nO    0.148    4.077    9.499\nN    2.695    6.673   11.374\nC    2.436    4.234   11.118\nC    1.232    4.308    8.994\nO    4.123    5.314   12.467\nN    2.384    4.342    9.677\nC    3.172    5.440   11.716\nC    1.368    7.011   10.886\nO    0.121    7.486    8.919\n","xyz");
-	viewer_1749583468635093.setStyle({"model": 0},{"stick": {"radius": 0.06, "color": "#DC2626"}, "sphere": {"radius": 0.15, "color": "#DC2626"}});
-	viewer_1749583468635093.setStyle({"model": 1},{"stick": {"radius": 0.06, "color": "#2563EB"}, "sphere": {"radius": 0.15, "color": "#2563EB"}});
-	viewer_1749583468635093.addCylinder({"start": {"x": 2.605, "y": 7.268, "z": 8.993}, "end": {"x": 2.3520202470547553, "y": 7.226958710305246, "z": 8.658106370707005}, "color": "green", "radius": 0.03, "dashed": false});
-	viewer_1749583468635093.addCylinder({"start": {"x": 2.496, "y": 7.668, "z": 7.588}, "end": {"x": 2.346408991166403, "y": 7.352103875782419, "z": 7.204810736169748}, "color": "green", "radius": 0.03, "dashed": false});
-	viewer_1749583468635093.addCylinder({"start": {"x": 2.966, "y": 6.517, "z": 6.732}, "end": {"x": 3.0712961846424562, "y": 6.1587580606127315, "z": 6.577683697882123}, "color": "green", "radius": 0.03, "dashed": false});
-	viewer_1749583468635093.addCylinder({"start": {"x": 4.014, "y": 6.588, "z": 6.085}, "end": {"x": 3.9992064319543568, "y": 6.285913633738647, "z": 5.817253534647794}, "color": "green", "radius": 0.03, "dashed": false});
-	viewer_1749583468635093.addCylinder({"start": {"x": 2.199, "y": 5.401, "z": 6.687}, "end": {"x": 2.636139116725579, "y": 4.902239797858024, "z": 6.935702107472854}, "color": "green", "radius": 0.03, "dashed": false});
-	viewer_1749583468635093.addCylinder({"start": {"x": 0.901, "y": 5.221, "z": 7.312}, "end": {"x": 1.2339607533109973, "y": 7.269847513862483, "z": 9.399400859408276}, "color": "green", "radius": 0.03, "dashed": false});
-	viewer_1749583468635093.addCylinder({"start": {"x": 0.919, "y": 4.647, "z": 8.754}, "end": {"x": 1.3231764864035984, "y": 4.560498089316355, "z": 7.4836106181030555}, "color": "green", "radius": 0.03, "dashed": false});
-	viewer_1749583468635093.addCylinder({"start": {"x": -0.131, "y": 4.583, "z": 9.352}, "end": {"x": 0.14828447373120657, "y": 4.07745919954173, "z": 9.499049575135471}, "color": "green", "radius": 0.03, "dashed": false});
-	viewer_1749583468635093.addCylinder({"start": {"x": 2.09, "y": 4.247, "z": 9.24}, "end": {"x": 2.694957577932146, "y": 6.673352151797596, "z": 11.374396444588658}, "color": "green", "radius": 0.03, "dashed": false});
-	viewer_1749583468635093.addCylinder({"start": {"x": 2.231, "y": 3.781, "z": 10.624}, "end": {"x": 2.4363283523757047, "y": 4.233988141771887, "z": 11.118278990518526}, "color": "green", "radius": 0.03, "dashed": false});
-	viewer_1749583468635093.addCylinder({"start": {"x": 3.25, "y": 4.676, "z": 11.376}, "end": {"x": 1.2317892735620877, "y": 4.308194410504846, "z": 8.994264857493143}, "color": "green", "radius": 0.03, "dashed": false});
-	viewer_1749583468635093.addCylinder({"start": {"x": 4.237, "y": 4.178, "z": 11.903}, "end": {"x": 4.123429860254834, "y": 5.3135318202977295, "z": 12.467395348831202}, "color": "green", "radius": 0.03, "dashed": false});
-	viewer_1749583468635093.addCylinder({"start": {"x": 3.046, "y": 5.999, "z": 11.421}, "end": {"x": 2.3842425444990187, "y": 4.342044267740763, "z": 9.67727484678457}, "color": "green", "radius": 0.03, "dashed": false});
-	viewer_1749583468635093.addCylinder({"start": {"x": 1.759, "y": 6.672, "z": 11.221}, "end": {"x": 3.171748164116583, "y": 5.440039614158781, "z": 11.715893035243392}, "color": "green", "radius": 0.03, "dashed": false});
-	viewer_1749583468635093.addCylinder({"start": {"x": 1.564, "y": 7.328, "z": 9.847}, "end": {"x": 1.3680163135608305, "y": 7.01109111015851, "z": 10.88622406016494}, "color": "green", "radius": 0.03, "dashed": false});
-	viewer_1749583468635093.addCylinder({"start": {"x": 0.496, "y": 7.868, "z": 9.593}, "end": {"x": 0.12099522870943602, "y": 7.485979602552243, "z": 8.918654916849245}, "color": "green", "radius": 0.03, "dashed": false});
-	viewer_1749583468635093.zoomTo();
-	viewer_1749583468635093.setBackgroundColor("white");
-viewer_1749583468635093.render();
+viewer_1750203873218844 = $3Dmol.createViewer(document.getElementById("3dmolviewer_1750203873218844"),{backgroundColor:"white"});
+viewer_1750203873218844.zoomTo();
+	viewer_1750203873218844.addModel("32\nALPRAL10_2\nO    7.874   14.234   25.737\nN    6.436   11.979   23.996\nC    6.757   13.947   25.364\nC    6.218   12.512   25.335\nO    7.732   17.834   25.929\nN    5.873   14.911   24.988\nC    6.893   16.902   26.107\nC    6.303   16.346   24.841\nO    9.414   17.570   29.295\nN    6.578   16.519   27.286\nC    8.749   16.876   28.549\nC    7.229   17.117   28.509\nO   12.468   15.975   26.107\nN    9.235   15.901   27.755\nC   11.243   16.112   26.384\nC   10.691   15.665   27.695\nO   11.441   16.807   22.034\nN   10.412   16.767   25.508\nC   10.876   16.441   23.021\nC   10.899   17.339   24.324\nO    7.787   14.141   22.540\nN   10.155   15.330   23.100\nC    8.639   13.963   21.678\nC   10.161   14.311   22.045\nO    5.056   12.382   20.904\nN    8.429   13.461   20.522\nC    6.276   12.257   20.827\nC    7.065   13.331   20.016\nO    4.886   10.395   24.213\nN    6.932   11.272   21.367\nC    5.769   10.930   23.560\nC    6.264   10.240   22.224\n","xyz");
+	viewer_1750203873218844.addModel("32\nCEJSUF\nN    9.264   15.895   27.854\nC   10.697   15.613   27.728\nC   11.281   16.086   26.409\nO   12.436   15.840   26.128\nN   10.445   16.748   25.592\nC   10.857   17.259   24.309\nC   10.654   16.332   23.131\nO   11.059   16.680   22.036\nN   10.064   15.175   23.374\nC    9.941   14.096   22.407\nC    8.546   14.069   21.814\nO    7.556   14.373   22.472\nN    8.447   13.576   20.569\nC    7.138   13.399   19.964\nC    6.296   12.363   20.682\nO    5.079   12.387   20.620\nN    6.950   11.406   21.357\nC    6.294   10.389   22.146\nC    5.923   10.847   23.563\nO    5.153   10.171   24.237\nN    6.494   11.976   23.998\nC    6.254   12.495   25.351\nC    6.752   13.943   25.370\nO    7.905   14.223   25.732\nN    5.878   14.881   25.000\nC    6.304   16.262   24.833\nC    6.967   16.918   26.022\nO    7.865   17.749   25.807\nN    6.604   16.622   27.284\nC    7.316   17.280   28.390\nC    8.799   16.987   28.468\nO    9.523   17.728   29.115\n","xyz");
+	viewer_1750203873218844.setStyle({"model": 0},{"stick": {"radius": 0.06, "color": "#DC2626"}, "sphere": {"radius": 0.15, "color": "#DC2626"}});
+	viewer_1750203873218844.setStyle({"model": 1},{"stick": {"radius": 0.06, "color": "#2563EB"}, "sphere": {"radius": 0.15, "color": "#2563EB"}});
+	viewer_1750203873218844.addCylinder({"start": {"x": 7.874, "y": 14.234, "z": 25.737}, "end": {"x": 7.904543043772743, "y": 14.223068744108863, "z": 25.732232174876863}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 6.436, "y": 11.979, "z": 23.996}, "end": {"x": 6.4944797017429705, "y": 11.975958150567699, "z": 23.997997948522507}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 6.757, "y": 13.947, "z": 25.364}, "end": {"x": 6.751830951728008, "y": 13.943245939760283, "z": 25.370321922161708}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 6.218, "y": 12.512, "z": 25.335}, "end": {"x": 6.253968160826627, "y": 12.494796911144622, "z": 25.35059749724676}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 7.732, "y": 17.834, "z": 25.929}, "end": {"x": 7.865428430000733, "y": 17.748616837229207, "z": 25.80706325187665}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 5.873, "y": 14.911, "z": 24.988}, "end": {"x": 5.8776979449272115, "y": 14.881117957326138, "z": 25.00004423570416}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 6.893, "y": 16.902, "z": 26.107}, "end": {"x": 6.967331516852335, "y": 16.917854168448798, "z": 26.02189416853941}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 6.303, "y": 16.346, "z": 24.841}, "end": {"x": 6.303940039815119, "y": 16.26229262247076, "z": 24.833490277755953}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 9.414, "y": 17.57, "z": 29.295}, "end": {"x": 9.522817921182316, "y": 17.72771554494151, "z": 29.11544355203888}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 6.578, "y": 16.519, "z": 27.286}, "end": {"x": 6.604080002932073, "y": 16.62246824835365, "z": 27.284027876133095}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 8.749, "y": 16.876, "z": 28.549}, "end": {"x": 8.798646860740792, "y": 16.98681332682867, "z": 28.467968318215632}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 7.229, "y": 17.117, "z": 28.509}, "end": {"x": 7.315906070981762, "y": 17.280305793164533, "z": 28.38977034772497}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 12.468, "y": 15.975, "z": 26.107}, "end": {"x": 12.43565286131598, "y": 15.839697802925466, "z": 26.127844747418496}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 9.235, "y": 15.901, "z": 27.755}, "end": {"x": 9.264226073558294, "y": 15.894772405581236, "z": 27.853808222708533}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 11.243, "y": 16.112, "z": 26.384}, "end": {"x": 11.28087217772487, "y": 16.085877115283537, "z": 26.408519503981594}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 10.691, "y": 15.665, "z": 27.695}, "end": {"x": 10.696827004239314, "y": 15.613026455660638, "z": 27.727971848336026}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 11.441, "y": 16.807, "z": 22.034}, "end": {"x": 11.059282550485268, "y": 16.680414702687287, "z": 22.03550680170597}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 10.412, "y": 16.767, "z": 25.508}, "end": {"x": 10.444708240407454, "y": 16.748403519411838, "z": 25.5922820178523}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 10.876, "y": 16.441, "z": 23.021}, "end": {"x": 10.653987478548093, "y": 16.331976653496298, "z": 23.131310082655347}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 10.899, "y": 17.339, "z": 24.324}, "end": {"x": 10.857264267260241, "y": 17.259021565607753, "z": 24.309024936980933}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 7.787, "y": 14.141, "z": 22.54}, "end": {"x": 7.555876387226276, "y": 14.372565834014997, "z": 22.471566263943593}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 10.155, "y": 15.33, "z": 23.1}, "end": {"x": 10.063799780904322, "y": 15.17470128417165, "z": 23.373896564357125}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 8.639, "y": 13.963, "z": 21.678}, "end": {"x": 8.546473217842475, "y": 14.068837537168214, "z": 21.814039047117028}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 10.161, "y": 14.311, "z": 22.045}, "end": {"x": 9.941130977736062, "y": 14.0960056837664, "z": 22.406812717735946}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 5.056, "y": 12.382, "z": 20.904}, "end": {"x": 5.078592847357102, "y": 12.387011279318603, "z": 20.619997098771076}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 8.429, "y": 13.461, "z": 20.522}, "end": {"x": 8.446639816545835, "y": 13.575865440374205, "z": 20.568846369750162}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 6.276, "y": 12.257, "z": 20.827}, "end": {"x": 6.296260667086259, "y": 12.36308655226205, "z": 20.682115439310014}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 7.065, "y": 13.331, "z": 20.016}, "end": {"x": 7.137917866232293, "y": 13.398656653760451, "z": 19.96354900257069}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 4.886, "y": 10.395, "z": 24.213}, "end": {"x": 5.152797606726884, "y": 10.171057289781025, "z": 24.23666097172628}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 6.932, "y": 11.272, "z": 21.367}, "end": {"x": 6.94972383587172, "y": 11.405618299597126, "z": 21.356759369231302}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 5.769, "y": 10.93, "z": 23.56}, "end": {"x": 5.9233823806124, "y": 10.847413764692686, "z": 23.562807853383063}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.addCylinder({"start": {"x": 6.264, "y": 10.24, "z": 22.224}, "end": {"x": 6.293913316816206, "y": 10.388735916093871, "z": 22.145829569667786}, "color": "green", "radius": 0.03, "dashed": false});
+	viewer_1750203873218844.zoomTo();
+	viewer_1750203873218844.setBackgroundColor("white");
+viewer_1750203873218844.render();
 });
 </script>
 </body>

@@ -111,7 +111,7 @@ def cluster_alignment(
         numItermax: int = 1000, 
         n_atoms: int = None, 
         n_trials: int = 500,
-        molecule_cluster_options: str = 'center',
+        representative_option: str = 'center',
         reflection: bool = False,
         ):
     """Compute optimal transport and alignment between clusters.
@@ -193,10 +193,10 @@ def cluster_alignment(
         return permutation_best, rmsd_best, p_best
     
     if case == 'molecule cluster':
-        if molecule_cluster_options == 'center':
+        if representative_option == 'center':
             representative_A, representative_B = X_A.reshape(-1, n_atoms, 3).mean(axis=1), X_B.reshape(-1, n_atoms, 3).mean(axis=1)
         else:
-            representative_A, representative_B = X_A[T_A == molecule_cluster_options], X_B[T_B == molecule_cluster_options]
+            representative_A, representative_B = X_A[T_A == representative_option], X_B[T_B == representative_option]
         list_P = perturbation_before_gw(representative_A, representative_B, p_list = [1], n_trials = n_trials, scale = 0.1)
         print('The number of candidate molecular level permutations is', len(list_P))
         rmsd_best = 1e10

@@ -13,7 +13,7 @@ def wc_experiment(mol_pair,
                n_atoms: int = 3,
                reg: float = 1e-2,
                numItermax: int = 10,
-               molecule_cluster_options: str = 'center',
+               representative_option: str = 'center',
                dataset_name: str = None, # ArbAlignDataWC, 1st2nd, Largest_RMSD
                save: bool = False, # whether to save the results
                n_trials: int = 300,
@@ -41,7 +41,7 @@ def wc_experiment(mol_pair,
             X_A, X_B, T_A, T_B, case = 'molecule cluster', 
             method = method, n_atoms = n_atoms, 
             reg = reg, numItermax = numItermax, 
-            molecule_cluster_options = molecule_cluster_options,
+            representative_option = representative_option,
             n_trials = n_trials)
             
         end_time = time.time()
@@ -52,7 +52,7 @@ def wc_experiment(mol_pair,
         results.append({
                 'nameA': nameA,
                 'nameB': nameB,
-                'representation': molecule_cluster_options,
+                'representation': representative_option,
                 'RMSD(OTMol)': rmsd_best,
                 '#': X_A.shape[0]//3,
                 'time': end_time - start_time,
@@ -62,7 +62,7 @@ def wc_experiment(mol_pair,
     
     results_df = pd.DataFrame(results)
     if save == True:
-        results_df.to_csv(os.path.join('./otmol_output', f'wc_{dataset_name}_{molecule_cluster_options}_results.csv'), index=False)
+        results_df.to_csv(os.path.join('./otmol_output', f'wc_{dataset_name}_{representative_option}_results.csv'), index=False)
     return results_df
 
 
@@ -284,7 +284,7 @@ def n_trial_experiment(
     for n_trials in n_trials_list:
         assignment, rmsd = otm.tl.cluster_alignment(
             X_A, X_B, T_A, T_B, case = 'molecule cluster', 
-            n_atoms = 3, molecule_cluster_options = 'center', n_trials = n_trials)
+            n_atoms = 3, representative_option = 'center', n_trials = n_trials)
         results.append({
             'RMSD(OTMol)': rmsd,
             'n_trials': n_trials,

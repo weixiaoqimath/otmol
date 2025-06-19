@@ -617,7 +617,7 @@ If you find this script useful for any publishable work, please cite the corresp
 
    write_to_xyz(num_atoms, './arbalign_output/'+name, b_final_labels, b_final_coords)
    print "Best alignment of " + str(args.xyz2) + " with " + str(args.xyz1) + " is written to ./arbalign_output/" + str(name)
-   return FinalRMSD
+   return FinalRMSD, rmsds[0][1], rmsds[0][2]
 
 def run_arbalign(xyz1_path, xyz2_path, simple=False, noHydrogens=False, verbose=False):
     # Create a simple namespace object to mimic argparse
@@ -635,13 +635,31 @@ def run_arbalign(xyz1_path, xyz2_path, simple=False, noHydrogens=False, verbose=
     return main(args)
 
 if __name__ == "__main__":
+   def get_transformation_matrix(swap, reflect): # added by Xiaoqi
+      """
+      Creates the transformation matrix for a given swap and reflection.
+      swap: tuple of indices (i,j,k) representing how to permute x,y,z
+      reflect: tuple of signs (a,b,c) representing reflections along each axis
+      Returns: 3x3 transformation matrix
+      """
+      matrix = np.zeros((3,3))
+      for i in range(3):
+         matrix[i, swap[i]] = reflect[i]
+      return matrix
 
-   if True:
+   def is_proper_rotation(swap, reflect): # added by Xiaoqi
+      """
+      Checks if the transformation is a proper rotation (determinant = 1)
+      """
+      matrix = get_transformation_matrix(swap, reflect)
+      return np.isclose(np.linalg.det(matrix), 1.0)
+
+   if False:
       result = []
       data_path = "../Data/Our_Benchmark_20250410_ver1/Cyclic_Peptide/Backbone_Most_Similar"
       info = pd.read_csv('../Data/Our_Benchmark_20250410_ver1/Cyclic_Peptide/Backbone_Most_similar_dihedral_angle.csv')
       for subfolder, nameA, nameB in zip(info['subfolder'], info['reference'], info['target']):
-         res = run_arbalign(
+         res, _, _ = run_arbalign(
             xyz1_path= os.path.join(data_path, subfolder, nameA),
             xyz2_path= os.path.join(data_path, subfolder, nameB),
             simple=False,  # Set to True for faster but less thorough alignment
@@ -655,12 +673,12 @@ if __name__ == "__main__":
          })
       pd.DataFrame(result).to_csv(('./arbalign_output/cp_most_similar_result.csv'), index=False)
 
-   if True:
+   if False:
       result = []
       data_path = "../Data/Our_Benchmark_20250410_ver1/Cyclic_Peptide/Backbone_Most_Different"
       info = pd.read_csv('../Data/Our_Benchmark_20250410_ver1/Cyclic_Peptide/Backbone_Most_different_dihedral_angle.csv')
       for subfolder, nameA, nameB in zip(info['subfolder'], info['reference'], info['target']):
-         res = run_arbalign(
+         res, _, _ = run_arbalign(
             xyz1_path= os.path.join(data_path, subfolder, nameA),
             xyz2_path= os.path.join(data_path, subfolder, nameB),
             simple=False,  # Set to True for faster but less thorough alignment
@@ -674,12 +692,12 @@ if __name__ == "__main__":
          })
       pd.DataFrame(result).to_csv(('./arbalign_output/cp_most_different_result.csv'), index=False)
 
-   if True:
+   if False:
       result = []
       data_path = "../Data/Our_Benchmark_20250410_ver1/Cyclic_Peptide/All_Backbone_XYZs"
       info = pd.read_csv('../Data/Our_Benchmark_20250410_ver1/Cyclic_Peptide/All_Backbone_Largest_RMSD_Pair.csv')
       for subfolder, nameA, nameB in zip(info['subfolder'], info['reference'], info['target']):
-         res = run_arbalign(
+         res, _, _ = run_arbalign(
             xyz1_path= os.path.join(data_path, subfolder, nameA),
             xyz2_path= os.path.join(data_path, subfolder, nameB),
             simple=False,  # Set to True for faster but less thorough alignment
@@ -693,28 +711,28 @@ if __name__ == "__main__":
          })
       pd.DataFrame(result).to_csv(('./arbalign_output/cp_largest_arbalign_result.csv'), index=False)
          
-   if False:
+   if True:
       result = []
       data_path = "../Data/FGG-Tripeptide"
       mol_pair_list_path = os.path.join(data_path, 'list')
       molecule_pairs = parse_molecule_pairs(mol_pair_list_path, mol_type='FGG')
       for nameA, nameB in molecule_pairs:
          #start_time = time.time()
-         RMSD_element = run_arbalign(
+         RMSD_element, swap_name, reflect_name = run_arbalign(
          xyz1_path= os.path.join(data_path, nameA+'.xyz'),
          xyz2_path= os.path.join(data_path, nameB+'.xyz'),
          simple=False,  # Set to True for faster but less thorough alignment
          noHydrogens=False,  # Set to True to ignore hydrogen atoms
          verbose=False  # Set to True to see detailed output
          )         
-         RMSD_sy2 = run_arbalign(
+         RMSD_sy2, swap_type, reflect_type = run_arbalign(
          xyz1_path= os.path.join(data_path, nameA+'_sy2.xyz'),
          xyz2_path= os.path.join(data_path, nameB+'_sy2.xyz'),
          simple=False,  # Set to True for faster but less thorough alignment
          noHydrogens=False,  # Set to True to ignore hydrogen atoms
          verbose=False  # Set to True to see detailed output
          )
-         RMSD_mna = run_arbalign(
+         RMSD_mna, swap_conn, reflect_conn = run_arbalign(
          xyz1_path= os.path.join(data_path, nameA+'_mna.xyz'),
          xyz2_path= os.path.join(data_path, nameB+'_mna.xyz'),
          simple=False,  # Set to True for faster but less thorough alignment
@@ -728,33 +746,35 @@ if __name__ == "__main__":
             'RMSD(ArbAlign+element name)': RMSD_element,
             'RMSD(ArbAlign+atom type)': RMSD_sy2,
             'RMSD(ArbAlign+atom connectivity)': RMSD_mna,
-            #'time': end_time - start_time
+            'reflection_name': is_proper_rotation(swap_name, reflect_name),
+            'reflection_conn': is_proper_rotation(swap_conn, reflect_conn),
+            'reflection_type': is_proper_rotation(swap_type, reflect_type),
          })
       pd.DataFrame(result).to_csv(('./arbalign_output/FGG_result.csv'), index=False)
       
 
-   if False:
+   if True:
       result = []
       data_path = "../Data/S1-MA-W1"
       mol_pair_list_path = os.path.join(data_path, 'list')
       molecule_pairs = parse_molecule_pairs(mol_pair_list_path, mol_type='S1')
       for nameA, nameB in molecule_pairs:
          #start_time = time.time()
-         RMSD_element = run_arbalign(
+         RMSD_element, swap_name, reflect_name = run_arbalign(
          xyz1_path= os.path.join(data_path, nameA+'.xyz'),
          xyz2_path= os.path.join(data_path, nameB+'.xyz'),
          simple=False,  # Set to True for faster but less thorough alignment
          noHydrogens=False,  # Set to True to ignore hydrogen atoms
          verbose=False  # Set to True to see detailed output
          )         
-         RMSD_sy2 = run_arbalign(
+         RMSD_sy2, swap_type, reflect_type = run_arbalign(
          xyz1_path= os.path.join(data_path, nameA+'_sy2.xyz'),
          xyz2_path= os.path.join(data_path, nameB+'_sy2.xyz'),
          simple=False,  # Set to True for faster but less thorough alignment
          noHydrogens=False,  # Set to True to ignore hydrogen atoms
          verbose=False  # Set to True to see detailed output
          )
-         RMSD_mna = run_arbalign(
+         RMSD_mna, swap_conn, reflect_conn = run_arbalign(
          xyz1_path= os.path.join(data_path, nameA+'_mna.xyz'),
          xyz2_path= os.path.join(data_path, nameB+'_mna.xyz'),
          simple=False,  # Set to True for faster but less thorough alignment
@@ -768,7 +788,9 @@ if __name__ == "__main__":
             'RMSD(ArbAlign+element name)': RMSD_element,
             'RMSD(ArbAlign+atom type)': RMSD_sy2,
             'RMSD(ArbAlign+atom connectivity)': RMSD_mna,
-            #'time': end_time - start_time
+            'reflection_name': is_proper_rotation(swap_name, reflect_name),
+            'reflection_conn': is_proper_rotation(swap_conn, reflect_conn),
+            'reflection_type': is_proper_rotation(swap_type, reflect_type),
          })
       pd.DataFrame(result).to_csv(('./arbalign_output/S1MAW1_result.csv'), index=False)
 
@@ -780,7 +802,7 @@ if __name__ == "__main__":
       molecule_pairs = parse_molecule_pairs(mol_pair_list_path, mol_type='water cluster')
       for nameA, nameB in molecule_pairs:
          start_time = time.time()
-         RMSD = run_arbalign(
+         RMSD, _, _ = run_arbalign(
          xyz1_path= os.path.join(data_path, nameA+'.xyz'),
          xyz2_path= os.path.join(data_path, nameB+'.xyz'),
          simple=False,  # Set to True for faster but less thorough alignment
@@ -802,7 +824,7 @@ if __name__ == "__main__":
       group1_info = pd.read_csv('../Data/Our_Benchmark_20250410_ver1/Water_Cluster_3_30/water_cluster_1st_2nd_lowest_energy.csv')
       for nameA, nameB in zip(group1_info['Reference'], group1_info['Target']):
          start_time = time.time()
-         RMSD = run_arbalign(
+         RMSD, _, _ = run_arbalign(
          xyz1_path= os.path.join(group1_data_path, nameA),
          xyz2_path= os.path.join(group1_data_path, nameB),
          simple=False,  # Set to True for faster but less thorough alignment
@@ -824,7 +846,7 @@ if __name__ == "__main__":
       group2_info = pd.read_csv('../Data/Our_Benchmark_20250410_ver1/Water_Cluster_3_30/water_cluster_largest_RMSD_pair_among_20_lowest_energy.csv')
       for nameA, nameB in zip(group2_info['Reference'], group2_info['Target']):
          start_time = time.time()
-         RMSD = run_arbalign(
+         RMSD, _, _ = run_arbalign(
          xyz1_path= os.path.join(group2_data_path, nameA),
          xyz2_path= os.path.join(group2_data_path, nameB),
          simple=False,  # Set to True for faster but less thorough alignment
@@ -847,7 +869,7 @@ if __name__ == "__main__":
       molecule_pairs = parse_molecule_pairs(mol_pair_list_path, mol_type='S1')
       for nameA, nameB in molecule_pairs:
          start_time = time.time()
-         RMSD = run_arbalign(
+         RMSD, _, _ = run_arbalign(
          xyz1_path= os.path.join(data_path, nameA+'.xyz'),
          xyz2_path= os.path.join(data_path, nameB+'.xyz'),
          simple=False,  # Set to True for faster but less thorough alignment

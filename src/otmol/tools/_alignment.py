@@ -71,10 +71,10 @@ def molecule_alignment(
         if Geo_A.max() == np.inf:
             Geo_A[Geo_A == np.inf] = Euc_A[Geo_A == np.inf]
             Geo_B[Geo_B == np.inf] = Euc_B[Geo_B == np.inf]
-        Geo_A, Geo_B = Geo_A/Geo_A.max(), Geo_B/Geo_B.max()
+        Geo_A, Geo_B = Geo_A/Geo_A.max(), Geo_B/Geo_A.max()
         D_A = (1-cst_D)*Euc_A + cst_D*Geo_A
         D_B = (1-cst_D)*Euc_B + cst_D*Geo_B
-        D_A, D_B = D_A/D_A.max(), D_B/D_A.max()
+        #D_A, D_B = D_A/D_A.max(), D_B/D_A.max()
     rmsd_best = 1e10
     permutation_best = None
     alpha_best = None

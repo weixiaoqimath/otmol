@@ -152,47 +152,51 @@ def experiment(
             X_B, _, B_B = otm.tl.process_molecule(molB)
             T_A = otm.tl.parse_mna(os.path.join(data_path, nameA + '.mna'))
             T_B = otm.tl.parse_mna(os.path.join(data_path, nameB + '.mna'))
-        #if plain_GW:
-        #    rmsd = GW_alignment(X_A, X_B, T_A, T_B)
-        #    results.append({
-        #        'nameA': nameA,
-        #        'nameB': nameB,
-        #        'RMSD(GW+{})'.format(setup): rmsd,
-        #        '# atoms': X_A.shape[0],
-        #    }) 
-        #    print(nameA, nameB, f"{rmsd:.2f}")
-        #else:
-        optimal_assignment, rmsd_best, alpha_best = otm.tl.molecule_alignment(
-            X_A, X_B, T_A, T_B, B_A, B_B, 
-            method = method, 
-            alpha_list = alpha_list, 
-            molecule_sizes = molecule_sizes, 
-            cst_D = cst_D
-            )
-                
-        if not otm.tl.is_permutation(T_A = T_A, T_B = T_B, perm = optimal_assignment, case = 'single'): 
-            print(nameA, nameB, 'Warning: not a proper permutation')
-        results.append({
-            'nameA': nameA,
-            'nameB': nameB,
-            'RMSD(OTMol+{})'.format(setup): rmsd_best,
-            '# atoms': X_A.shape[0],
-            'alpha': alpha_best,
-            'assignment': optimal_assignment,
-            }) 
-        print(i, nameA, nameB, f"{rmsd_best:.2f}")
+        if dataset_name == 'FGG':
+            optimal_assignment, rmsd_best, alpha_best = otm.tl.molecule_alignment(
+                X_A, X_B, T_A, T_B, B_A, B_B, 
+                method = method, 
+                alpha_list = alpha_list, 
+                molecule_sizes = molecule_sizes, 
+                cst_D = cst_D
+                )
+                    
+            if not otm.tl.is_permutation(T_A = T_A, T_B = T_B, perm = optimal_assignment, case = 'single'): 
+                print(nameA, nameB, 'Warning: not a proper permutation')
+            results.append({
+                'nameA': nameA,
+                'nameB': nameB,
+                'RMSD(OTMol+{})'.format(setup): rmsd_best,
+                '# atoms': X_A.shape[0],
+                'alpha': alpha_best,
+                'assignment': optimal_assignment,
+                }) 
+            print(i, nameA, nameB, f"{rmsd_best:.2f}")
+        if dataset_name == 'S1MAW1':
+            optimal_assignment, rmsd_best, alpha_best, mismatched_bond_best = otm.tl.molecule_alignment(
+                X_A, X_B, T_A, T_B, B_A, B_B, 
+                method = method, 
+                alpha_list = alpha_list, 
+                molecule_sizes = molecule_sizes, 
+                cst_D = cst_D,
+                count_mismatched_bond = True)
+            if not otm.tl.is_permutation(T_A = T_A, T_B = T_B, perm = optimal_assignment, case = 'single'): 
+                print(nameA, nameB, 'Warning: not a proper permutation')
+            results.append({
+                'nameA': nameA,
+                'nameB': nameB,
+                'RMSD(OTMol+{})'.format(setup): rmsd_best,
+                '# atoms': X_A.shape[0],
+                'alpha': alpha_best,
+                'mismatch_bond': mismatched_bond_best,
+                'assignment': optimal_assignment,
+                }) 
+            print(i, nameA, nameB, f"{rmsd_best:.2f}", f"{mismatched_bond_best}")
 
     results_df = pd.DataFrame(results)
     setup = setup.replace(' ', '_')
     if save:
         results_df.to_csv(os.path.join('./otmol_output', f'{dataset_name}_{setup}_{method}_cstD={cst_D:.1f}_results.csv'), index=False)
-        #else:
-        #    results_df.to_csv(os.path.join('./otmol_output', f'{dataset_name}_{setup}_{method[0]}_{method[1]}_results.csv'), index=False)
-    #if save and plain_GW:
-    #    if len(method) == 1:
-    #        results_df.to_csv(os.path.join('./GW_output', f'{dataset_name}_{setup}_results.csv'), index=False)
-    #    else:
-    #        results_df.to_csv(os.path.join('./GW_output', f'{dataset_name}_{setup}_{method[0]}_{method[1]}_results.csv'), index=False)
     return pd.DataFrame(results)
 
 
@@ -301,6 +305,7 @@ def cp_experiment(
         dataset_name: str = None,
         save: bool = False,
         cst_D: float = 0.,
+        count_mismatched_bond: bool = True,
         ):
     results = []
     # Load the molecule pairs from the specified file
@@ -309,17 +314,7 @@ def cp_experiment(
         molB = next(pybel.readfile('xyz', os.path.join(data_path, subfolder, nameB)))
         X_A, T_A, B_A = otm.tl.process_molecule(molA) 
         X_B, T_B, B_B = otm.tl.process_molecule(molB)
-        #if plain_GW:
-        #    rmsd = GW_alignment(X_A, X_B, T_A, T_B)
-        #    results.append({
-        #        'nameA': nameA,
-        #        'nameB': nameB,
-        #        'RMSD(GW)': rmsd,
-        #        '# atoms': X_A.shape[0],
-        #    }) 
-        #    print(nameA, nameB, f"{rmsd:.2f}")
-        #else:
-        optimal_assignment, rmsd_best, alpha_best = otm.tl.molecule_alignment(X_A, X_B, T_A, T_B, B_A = B_A, B_B = B_B, method = method, alpha_list = alpha_list, cst_D = cst_D)
+        optimal_assignment, rmsd_best, alpha_best, mismatched_bond_best = otm.tl.molecule_alignment(X_A, X_B, T_A, T_B, B_A = B_A, B_B = B_B, method = method, alpha_list = alpha_list, cst_D = cst_D, count_mismatched_bond = count_mismatched_bond)
         if not otm.tl.is_permutation(T_A = T_A, T_B = T_B, perm = optimal_assignment, case = 'single'):
             print(nameA, nameB, 'Warning: Not a proper assignment')
         results.append({
@@ -327,9 +322,10 @@ def cp_experiment(
                 'nameB': nameB,
                 'RMSD(OTMol)': rmsd_best,
                 'alpha': alpha_best,
+                'mismatched_bond': mismatched_bond_best,
                 'assignment': optimal_assignment,
             }) 
-        print(nameA, nameB, f"{rmsd_best:.2f}")
+        print(nameA, nameB, f"{rmsd_best:.2f}", f"{mismatched_bond_best}")
     results_df = pd.DataFrame(results)
     if save:
         results_df.to_csv(os.path.join('./otmol_output', f'cp_{dataset_name}_{method}_cstD={cst_D:.1f}_results.csv'), index=False)

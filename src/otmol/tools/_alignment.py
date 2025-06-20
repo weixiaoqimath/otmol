@@ -6,7 +6,7 @@ from scipy.spatial import distance_matrix
 
 from .._optimal_transport import fsgw_mvc, perform_sOT_log
 from ._distance_processing import geodesic_distance
-from ._utils import is_permutation, permutation_to_matrix, cost_matrix
+from ._utils import is_permutation, permutation_to_matrix, cost_matrix, mismatched_bond_counter
 from ._utils import root_mean_square_deviation, add_molecule_indices
 from ._utils import add_perturbation, normalize_matrix, resolve_sinkhorn_conflicts
 
@@ -23,6 +23,7 @@ def molecule_alignment(
         molecule_sizes: List[int] = None,
         reflection: bool = False,
         cst_D: float = 0.,
+        count_mismatched_bond: bool = False,
         ) -> Tuple[np.ndarray, float, float]:
     """Compute optimal transport and alignment between molecules.
 
@@ -74,9 +75,10 @@ def molecule_alignment(
         Geo_A, Geo_B = Geo_A/Geo_A.max(), Geo_B/Geo_A.max()
         D_A = (1-cst_D)*Euc_A + cst_D*Geo_A
         D_B = (1-cst_D)*Euc_B + cst_D*Geo_B
-        #D_A, D_B = D_A/D_A.max(), D_B/D_A.max()
     rmsd_best = 1e10
-    permutation_best = None
+    mismatched_bond_best = 1e10
+    assignment_list = []
+    assignment_best = None
     alpha_best = None
     for alpha in alpha_list:
         if method == 'fGW':
@@ -86,17 +88,41 @@ def molecule_alignment(
             # Fused Supervised Gromov-Wasserstein
             P = fsgw_mvc(D_A, D_B, M=C, fsgw_alpha=alpha, fsgw_gamma=10, fsgw_niter=10, fsgw_eps=0.001)
         assignment = np.argmax(P, axis=1)
-        if not is_permutation(T_A=T_A, T_B=T_B, perm=assignment, case='single'):
-            continue
-        X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(assignment), reflection)
-        rmsd = root_mean_square_deviation(X_A, X_B_aligned[assignment])
-        if rmsd < rmsd_best:
-            rmsd_best = rmsd
-            permutation_best = assignment
-            alpha_best = alpha
-    if permutation_best is None:
-        print('No valid permutation found')
-    return permutation_best, rmsd_best, alpha_best
+        if is_permutation(T_A=T_A, T_B=T_B, perm=assignment, case='single'):
+            assignment_list.append(assignment)
+
+    if count_mismatched_bond:  
+        n = len(T_A)
+        for assignment in assignment_list:
+            mismatched_bond = mismatched_bond_counter(B_A, B_B, assignment, n, n)
+            if mismatched_bond < mismatched_bond_best:
+                rmsd_best = 1e10 # reset rmsd_best
+                mismatched_bond_best = mismatched_bond
+                X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(assignment), reflection)
+                rmsd = root_mean_square_deviation(X_A, X_B_aligned[assignment])
+                if rmsd < rmsd_best:
+                    rmsd_best = rmsd
+                    assignment_best = assignment
+            if mismatched_bond == mismatched_bond_best:
+                X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(assignment), reflection)
+                rmsd = root_mean_square_deviation(X_A, X_B_aligned[assignment])
+                if rmsd < rmsd_best:
+                    rmsd_best = rmsd
+                    assignment_best = assignment              
+        if assignment_best is None:
+            print('No valid assignment found') 
+        return assignment_best, rmsd_best, alpha_best, mismatched_bond_best
+    else:
+        for assignment in assignment_list:
+            X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(assignment), reflection)
+            rmsd = root_mean_square_deviation(X_A, X_B_aligned[assignment])
+            if rmsd < rmsd_best:
+                rmsd_best = rmsd
+                assignment_best = assignment
+                alpha_best = alpha
+        if assignment_best is None:
+            print('No valid assignment found')
+        return assignment_best, rmsd_best, alpha_best
 
 
 def cluster_alignment(

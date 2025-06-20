@@ -417,3 +417,11 @@ def add_molecule_indices(
     return np.array(T_A_with_indices, dtype=str), np.array(T_B_with_indices, dtype=str)
 
 
+def mismatched_bond_counter(B_A, B_B, assignment, n, m):
+    i, j = np.triu_indices(n, k=1)  # k=1 to exclude diagonal
+    # Create assignment matrix        
+    P = np.zeros((n, m), dtype=int)
+    P[np.arange(n), assignment] = 1
+    # Compare bonds using matrix operations
+    B_B_permuted = P @ B_B @ P.T
+    return np.sum(B_A[i, j] != B_B_permuted[i, j])

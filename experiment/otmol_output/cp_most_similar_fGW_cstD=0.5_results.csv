@@ -1,8 +1,0 @@
-nameA,nameB,RMSD(OTMol),alpha,assignment
-ALPRAL10_2_fixed_backbone.xyz,CEJSUF_fixed_backbone.xyz,0.11329876297674482,0.09,[12 13 14 15  0  1  2  3  4  5  6  7  8  9 10 11]
-CGPGAP10_fixed_backbone.xyz,PAPGAP_fixed_backbone.xyz,0.06982718888465207,0.02,[ 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19]
-BIHXUL10_fixed_backbone.xyz,CINYED_fixed_backbone.xyz,0.10743477108483794,0.05,[ 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23]
-LACSUD_fixed_backbone.xyz,TALVAD_fixed_backbone.xyz,0.32215205817009146,0.03,"[ 4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27
-  0  1  2  3]"
-EVAPUM_fixed_backbone.xyz,UZUKUW_fixed_backbone.xyz,0.20399413709710487,0.03,"[23 20 22 21 27 24 26 25 31 28 30 29  3  0  2  1  7  4  6  5 11  8 10  9
- 15 12 14 13 19 16 18 17]"

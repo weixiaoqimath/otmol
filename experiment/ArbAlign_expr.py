@@ -746,9 +746,9 @@ if __name__ == "__main__":
             'RMSD(ArbAlign+element name)': RMSD_element,
             'RMSD(ArbAlign+atom type)': RMSD_sy2,
             'RMSD(ArbAlign+atom connectivity)': RMSD_mna,
-            'reflection_name': is_proper_rotation(swap_name, reflect_name),
-            'reflection_conn': is_proper_rotation(swap_conn, reflect_conn),
-            'reflection_type': is_proper_rotation(swap_type, reflect_type),
+            'reflection_name': not is_proper_rotation(swap_name, reflect_name),
+            'reflection_conn': not is_proper_rotation(swap_conn, reflect_conn),
+            'reflection_type': not is_proper_rotation(swap_type, reflect_type),
          })
       pd.DataFrame(result).to_csv(('./arbalign_output/FGG_result.csv'), index=False)
       
@@ -788,9 +788,9 @@ if __name__ == "__main__":
             'RMSD(ArbAlign+element name)': RMSD_element,
             'RMSD(ArbAlign+atom type)': RMSD_sy2,
             'RMSD(ArbAlign+atom connectivity)': RMSD_mna,
-            'reflection_name': is_proper_rotation(swap_name, reflect_name),
-            'reflection_conn': is_proper_rotation(swap_conn, reflect_conn),
-            'reflection_type': is_proper_rotation(swap_type, reflect_type),
+            'reflection_name': not is_proper_rotation(swap_name, reflect_name),
+            'reflection_conn': not is_proper_rotation(swap_conn, reflect_conn),
+            'reflection_type': not is_proper_rotation(swap_type, reflect_type),
          })
       pd.DataFrame(result).to_csv(('./arbalign_output/S1MAW1_result.csv'), index=False)
 

@@ -314,18 +314,32 @@ def cp_experiment(
         molB = next(pybel.readfile('xyz', os.path.join(data_path, subfolder, nameB)))
         X_A, T_A, B_A = otm.tl.process_molecule(molA) 
         X_B, T_B, B_B = otm.tl.process_molecule(molB)
-        optimal_assignment, rmsd_best, alpha_best, mismatched_bond_best = otm.tl.molecule_alignment(X_A, X_B, T_A, T_B, B_A = B_A, B_B = B_B, method = method, alpha_list = alpha_list, cst_D = cst_D, count_mismatched_bond = count_mismatched_bond)
-        if not otm.tl.is_permutation(T_A = T_A, T_B = T_B, perm = optimal_assignment, case = 'single'):
-            print(nameA, nameB, 'Warning: Not a proper assignment')
-        results.append({
-                'nameA': nameA,
-                'nameB': nameB,
-                'RMSD(OTMol)': rmsd_best,
-                'alpha': alpha_best,
-                'mismatched_bond': mismatched_bond_best,
-                'assignment': optimal_assignment,
-            }) 
-        print(nameA, nameB, f"{rmsd_best:.2f}", f"{mismatched_bond_best}")
+        if count_mismatched_bond:
+            optimal_assignment, rmsd_best, alpha_best, mismatched_bond_best = otm.tl.molecule_alignment(X_A, X_B, T_A, T_B, B_A = B_A, B_B = B_B, method = method, alpha_list = alpha_list, cst_D = cst_D, count_mismatched_bond = count_mismatched_bond)
+            if not otm.tl.is_permutation(T_A = T_A, T_B = T_B, perm = optimal_assignment, case = 'single'):
+                print(nameA, nameB, 'Warning: Not a proper assignment')
+            results.append({
+                    'nameA': nameA,
+                    'nameB': nameB,
+                    'RMSD(OTMol)': rmsd_best,
+                    'alpha': alpha_best,
+                    'mismatched_bond': mismatched_bond_best,
+                    'assignment': optimal_assignment,
+                }) 
+            print(nameA, nameB, f"{rmsd_best:.2f}", f"{mismatched_bond_best}")
+        else:
+            optimal_assignment, rmsd_best, alpha_best = otm.tl.molecule_alignment(X_A, X_B, T_A, T_B, B_A = B_A, B_B = B_B, method = method, alpha_list = alpha_list, cst_D = cst_D, count_mismatched_bond = count_mismatched_bond)
+            if not otm.tl.is_permutation(T_A = T_A, T_B = T_B, perm = optimal_assignment, case = 'single'):
+                print(nameA, nameB, 'Warning: Not a proper assignment')
+            results.append({
+                    'nameA': nameA,
+                    'nameB': nameB,
+                    'RMSD(OTMol)': rmsd_best,
+                    'alpha': alpha_best,
+                    'assignment': optimal_assignment,
+                }) 
+            print(nameA, nameB, f"{rmsd_best:.2f}")
+
     results_df = pd.DataFrame(results)
     if save:
         results_df.to_csv(os.path.join('./otmol_output', f'cp_{dataset_name}_{method}_cstD={cst_D:.1f}_results.csv'), index=False)

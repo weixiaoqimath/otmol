@@ -186,7 +186,11 @@ def parse_mna(file_path: str) -> np.ndarray:
     return np.array(atom_connectivity, dtype=str)
 
 
-def write_xyz_with_custom_labels(output_file: str, coordinates: np.ndarray, connectivity: np.ndarray):
+def write_xyz_with_custom_labels(
+        output_file: str, 
+        coordinates: np.ndarray, 
+        labels: np.ndarray,
+        comment: str = "Modified xyz file with custom names. Used for ArbAlign."):
     """Write xyz file with coordinates and custom names.
     Intended for preparing input for ArbAlign.
 
@@ -201,6 +205,6 @@ def write_xyz_with_custom_labels(output_file: str, coordinates: np.ndarray, conn
     """
     with open(output_file, 'w') as f:
         f.write(f"{coordinates.shape[0]}\n")
-        f.write("Modified xyz file with custom names. Used for ArbAlign.\n")
-        for coord, atom_name in zip(coordinates, connectivity):
+        f.write(f"{comment}\n")
+        for coord, atom_name in zip(coordinates, labels):
             f.write(f"{atom_name:4s} {coord[0]:12.6f} {coord[1]:12.6f} {coord[2]:12.6f}\n")

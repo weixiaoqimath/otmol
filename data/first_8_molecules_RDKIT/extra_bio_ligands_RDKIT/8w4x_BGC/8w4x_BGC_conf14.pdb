@@ -1,0 +1,37 @@
+COMPND    GLUCANASE
+HETATM    1  C2  BGC A 501      -0.987  -0.920   1.411  1.00  7.38           C  
+HETATM    2  C3  BGC A 501      -2.088  -0.212   0.647  1.00  7.14           C  
+HETATM    3  C4  BGC A 501      -1.451   0.434  -0.546  1.00  7.78           C  
+HETATM    4  C5  BGC A 501      -0.258  -0.249  -1.100  1.00  8.11           C  
+HETATM    5  C6  BGC A 501       0.956   0.675  -0.948  1.00  8.81           C  
+HETATM    6  C1  BGC A 501      -0.478  -1.986   0.449  1.00  8.76           C  
+HETATM    7  O1  BGC A 501       0.359  -2.873   1.126  1.00 11.06           O  
+HETATM    8  O2  BGC A 501      -1.623  -1.554   2.474  1.00  9.88           O  
+HETATM    9  O3  BGC A 501      -2.687   0.712   1.488  1.00 11.03           O  
+HETATM   10  O4  BGC A 501      -2.487   0.602  -1.493  1.00 11.98           O  
+HETATM   11  O5  BGC A 501       0.002  -1.520  -0.726  1.00  8.88           O  
+HETATM   12  O6  BGC A 501       2.035   0.240  -1.728  1.00  8.45           O  
+HETATM   13  H2  BGC A 501      -0.159  -0.281   1.714  1.00  8.86           H  
+HETATM   14  H3  BGC A 501      -2.776  -0.996   0.274  1.00  8.56           H  
+HETATM   15  H4  BGC A 501      -1.211   1.495  -0.241  1.00  9.34           H  
+HETATM   16  H5  BGC A 501      -0.420  -0.289  -2.219  1.00  9.73           H  
+HETATM   17  H61 BGC A 501       0.710   1.698  -1.289  1.00 10.57           H  
+HETATM   18  H62 BGC A 501       1.344   0.671   0.103  1.00 10.57           H  
+HETATM   19  H1  BGC A 501      -1.406  -2.577   0.201  1.00 10.51           H  
+HETATM   20  HO4ABGC A 501      -2.099   0.998  -2.299  0.44 14.38           H  
+HETATM   21  HO6ABGC A 501       1.969   0.680  -2.629  0.39 10.14           H  
+HETATM   22  H1  UNL     1       0.083  -2.935   2.060  1.00  0.00           H  
+HETATM   23  H2  UNL     1      -1.136  -1.463   3.326  1.00  0.00           H  
+HETATM   24  H3  UNL     1      -3.246   0.230   2.119  1.00  0.00           H  
+CONECT    1    2    6    8   13
+CONECT    2    3    9   14
+CONECT    3    4   10   15
+CONECT    4    5   11   16
+CONECT    5   12   17   18
+CONECT    6    7   11   19
+CONECT    7   22
+CONECT    8   23
+CONECT    9   24
+CONECT   10   20
+CONECT   12   21
+END

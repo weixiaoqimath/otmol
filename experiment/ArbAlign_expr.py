@@ -604,10 +604,10 @@ If you find this script useful for any publishable work, please cite the corresp
       FinalRMSD = float(InitRMSD_unsorted) # added by Xiaoqi
 
    if args.noHydrogens:
-      name = str(args.xyz2.split(".xyz")[0]) + "-aligned_to-" + \
-             str(args.xyz1.split(".xyz")[0]) + "-noHydrogens.xyz" 
+      name = str(args.xyz2.split("/")[-1].split(".xyz")[0]) + "-aligned_to-" + \
+             str(args.xyz1.split("/")[-1]) + "-noHydrogens.xyz" # modified by Xiaoqi
    else:
-      name = str(args.xyz2.split("/")[-1].split(".xyz")[0]) + "-aligned_to-" + str(args.xyz1.split("/")[-1])
+      name = str(args.xyz2.split("/")[-1].split(".xyz")[0]) + "-aligned_to-" + str(args.xyz1.split("/")[-1]) # modified by Xiaoqi
 
    if FinalRMSD < float(InitRMSD_unsorted): 
       b_final_labels, b_final_coords = permute_all_atoms(b_labels, rmsds[0][3], order)
@@ -634,25 +634,29 @@ def run_arbalign(xyz1_path, xyz2_path, simple=False, noHydrogens=False, verbose=
     # Call the main function with our args object
     return main(args)
 
-if __name__ == "__main__":
-   def get_transformation_matrix(swap, reflect): # added by Xiaoqi
-      """
-      Creates the transformation matrix for a given swap and reflection.
-      swap: tuple of indices (i,j,k) representing how to permute x,y,z
-      reflect: tuple of signs (a,b,c) representing reflections along each axis
-      Returns: 3x3 transformation matrix
-      """
-      matrix = np.zeros((3,3))
-      for i in range(3):
-         matrix[i, swap[i]] = reflect[i]
-      return matrix
 
-   def is_proper_rotation(swap, reflect): # added by Xiaoqi
-      """
-      Checks if the transformation is a proper rotation (determinant = 1)
-      """
-      matrix = get_transformation_matrix(swap, reflect)
-      return np.isclose(np.linalg.det(matrix), 1.0)
+def get_transformation_matrix(swap, reflect): # added by Xiaoqi
+    """
+    Creates the transformation matrix for a given swap and reflection.
+    swap: tuple of indices (i,j,k) representing how to permute x,y,z
+    reflect: tuple of signs (a,b,c) representing reflections along each axis
+    Returns: 3x3 transformation matrix
+    """
+    matrix = np.zeros((3,3))
+    for i in range(3):
+        matrix[i, swap[i]] = reflect[i]
+    return matrix
+
+
+def is_proper_rotation(swap, reflect): # added by Xiaoqi
+    """
+    Checks if the transformation is a proper rotation (determinant = 1)
+    """
+    matrix = get_transformation_matrix(swap, reflect)
+    return np.isclose(np.linalg.det(matrix), 1.0)
+
+
+if __name__ == "__main__":
 
    if False:
       result = []

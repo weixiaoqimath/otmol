@@ -7,6 +7,8 @@ from typing import List
 import gc
 import psutil
 import numpy as np
+
+
 def wc_experiment(mol_pair, 
                data_path: str = None,
                method: str = 'emd',
@@ -27,16 +29,6 @@ def wc_experiment(mol_pair,
         molB = next(pybel.readfile('xyz', os.path.join(data_path, nameB)))
         X_A, T_A, _ = otm.tl.process_molecule(molA) 
         X_B, T_B, _ = otm.tl.process_molecule(molB)
-        #if plain_GW:
-        #    rmsd = GW_alignment(X_A, X_B, T_A, T_B)
-        #    results.append({
-        #        'nameA': nameA,
-        #        'nameB': nameB,
-        #        'RMSD(GW)': rmsd,
-        #        '# atoms': X_A.shape[0],
-        #    }) 
-        #    print(nameA, nameB, f"{rmsd:.2f}")
-        #else:
         optimal_assignment, rmsd_best = otm.tl.cluster_alignment(
             X_A, X_B, T_A, T_B, case = 'molecule cluster', 
             method = method, n_atoms = n_atoms, 
@@ -409,7 +401,7 @@ def interactive_alignment_plot_py3dmol(
     assignment: np.ndarray = None,
     nameA: str = 'A', 
     nameB: str = 'B', 
-    save: bool = False
+    #save: bool = False
     ) -> None:
     """Plot the alignment of two structures in 3D using py3Dmol.
 
@@ -503,59 +495,6 @@ def interactive_alignment_plot_py3dmol(
     
     # Show the viewer
     viewer.show()
-    if save:
-        viewer.write_html(f"{nameA}_{nameB}.html")
-
-
-def GW_alignment(
-    X_A: np.ndarray,
-    X_B: np.ndarray,
-    T_A: np.ndarray,
-    T_B: np.ndarray,
-    p_list: list = range(2, 9),
-    ) -> None:
-    """
-    Align the two structures only on the same element using GW.
-    """
-    import ot
-    from scipy.spatial import distance_matrix
-    label_list = np.unique(T_A)
-    X_A_label_list = []
-    permuted_X_B_label_list = []
-    for label in label_list:
-        X_A_label = X_A[T_A == label]
-        X_B_label = X_B[T_B == label]
-        X_A_label_list.append(X_A_label)
-        perm_best = None
-        rmsd_best = 1e10
-        if len(X_A_label) == 1 and len(X_B_label) == 1:
-            permuted_X_B_label_list.append(X_B_label)
-            continue
-        if len(X_A_label) == 2 and len(X_B_label) == 2:
-            for perm in [np.array([0, 1]), np.array([1, 0])]:
-                X_B_label_aligned, _, _ = otm.tl.kabsch(X_A_label, X_B_label, otm.tl.permutation_to_matrix(perm))
-                rmsd = otm.tl.root_mean_square_deviation(X_A_label, X_B_label_aligned)
-                if rmsd < rmsd_best:
-                    rmsd_best = rmsd
-                    perm_best = perm
-            permuted_X_B_label_list.append(X_B_label[perm_best])
-            continue
-        for p in p_list:
-            D_A = distance_matrix(X_A_label, X_A_label)**p
-            D_B = distance_matrix(X_B_label, X_B_label)**p
-            P = ot.gromov.gromov_wasserstein(D_A/D_A.max(), D_B/D_A.max(), symmetric=True)
-            perm = np.argmax(P, axis=1)
-            if len(np.unique(perm)) != len(X_A_label):
-                continue
-            X_B_label_aligned, _, _ = otm.tl.kabsch(X_A_label, X_B_label, otm.tl.permutation_to_matrix(perm))
-            rmsd = otm.tl.root_mean_square_deviation(X_A_label, X_B_label_aligned)
-            if rmsd < rmsd_best:
-                rmsd_best = rmsd
-                perm_best = perm
-        permuted_X_B_label_list.append(X_B_label[perm_best])
-
-    _X_A, _X_B = np.vstack(X_A_label_list), np.vstack(permuted_X_B_label_list)
-    _X_B_aligned, _, _ = otm.tl.kabsch(_X_A, _X_B, np.eye(len(_X_A)))
-    rmsd = otm.tl.root_mean_square_deviation(_X_A, _X_B_aligned)
-    return rmsd
+    #if save:
+    #    viewer.write_html(f"{nameA}_{nameB}.html")
 

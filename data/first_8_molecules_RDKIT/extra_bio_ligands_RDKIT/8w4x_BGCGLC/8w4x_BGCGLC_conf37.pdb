@@ -1,0 +1,68 @@
+COMPND    GLUCANASE
+HETATM    1  C1  GLC C   1       0.016   1.413   3.350  1.00 13.46           C  
+HETATM    2  C2  GLC C   1      -0.747   0.190   2.955  1.00  9.36           C  
+HETATM    3  C3  GLC C   1       0.035  -0.579   1.946  1.00  8.26           C  
+HETATM    4  C4  GLC C   1       0.314   0.308   0.725  1.00  7.82           C  
+HETATM    5  C5  GLC C   1       0.717   1.677   1.162  1.00  9.64           C  
+HETATM    6  C6  GLC C   1      -0.331   2.733   0.898  1.00 12.03           C  
+HETATM    7  O1  GLC C   1       0.559   1.194   4.621  1.00 19.44           O  
+HETATM    8  O2  GLC C   1      -0.940  -0.675   4.056  1.00 10.47           O  
+HETATM    9  O3  GLC C   1      -0.594  -1.743   1.526  1.00  9.36           O  
+HETATM   10  O4  GLC C   1       1.380  -0.322   0.082  1.00  8.14           O  
+HETATM   11  O5  GLC C   1       1.072   1.709   2.514  1.00 10.71           O  
+HETATM   12  O6  GLC C   1      -0.730   2.754  -0.438  1.00 13.38           O  
+HETATM   13  H1  GLC C   1      -0.690   2.262   3.479  1.00 16.15           H  
+HETATM   14  H2  GLC C   1      -1.768   0.406   2.587  1.00 11.23           H  
+HETATM   15  H3  GLC C   1       1.020  -0.834   2.364  1.00  9.91           H  
+HETATM   16  H4  GLC C   1      -0.590   0.373   0.081  1.00  9.38           H  
+HETATM   17  H5  GLC C   1       1.624   1.994   0.596  1.00 11.57           H  
+HETATM   18  H61 GLC C   1       0.148   3.715   1.092  1.00 14.43           H  
+HETATM   19  H62 GLC C   1      -1.232   2.629   1.523  1.00 14.43           H  
+HETATM   20  HO3AGLC C   1      -1.429  -1.913   1.991  0.44 11.23           H  
+HETATM   21  C2  BGC C   2       1.772  -0.030  -2.281  1.00  7.17           C  
+HETATM   22  C3  BGC C   2       1.121  -0.308  -3.589  1.00  6.31           C  
+HETATM   23  C4  BGC C   2       0.429  -1.632  -3.711  1.00  7.13           C  
+HETATM   24  C5  BGC C   2       0.144  -2.316  -2.429  1.00  6.68           C  
+HETATM   25  C6  BGC C   2       0.120  -3.843  -2.588  1.00  8.27           C  
+HETATM   26  C1  BGC C   2       0.951  -0.671  -1.190  1.00  6.39           C  
+HETATM   27  O2  BGC C   2       1.872   1.345  -2.066  1.00  9.63           O  
+HETATM   28  O3  BGC C   2       2.078  -0.189  -4.599  1.00  8.48           O  
+HETATM   29  O4  BGC C   2      -0.790  -1.410  -4.355  1.00  7.74           O  
+HETATM   30  O5  BGC C   2       1.064  -2.059  -1.404  1.00  7.52           O  
+HETATM   31  O6  BGC C   2       1.371  -4.320  -2.921  1.00  8.46           O  
+HETATM   32  H2  BGC C   2       2.808  -0.450  -2.286  1.00  8.60           H  
+HETATM   33  H3  BGC C   2       0.408   0.545  -3.777  1.00  7.57           H  
+HETATM   34  H4  BGC C   2       1.016  -2.295  -4.406  1.00  8.56           H  
+HETATM   35  H5  BGC C   2      -0.831  -1.976  -2.022  1.00  8.01           H  
+HETATM   36  H61 BGC C   2      -0.655  -4.111  -3.354  1.00  9.93           H  
+HETATM   37  H62 BGC C   2      -0.229  -4.316  -1.648  1.00  9.93           H  
+HETATM   38  H1  BGC C   2      -0.112  -0.360  -1.353  1.00  7.67           H  
+HETATM   39  HO2ABGC C   2       2.773   1.583  -1.768  0.43 11.55           H  
+HETATM   40  HO3ABGC C   2       2.856   0.297  -4.268  0.43 10.17           H  
+HETATM   41  HO4ABGC C   2      -0.698  -1.491  -5.321  0.43  9.29           H  
+HETATM   42  H1  UNL     1       0.745   2.034   5.112  1.00  0.00           H  
+HETATM   43  H2  UNL     1      -0.724  -0.223   4.910  1.00  0.00           H  
+HETATM   44  H3  UNL     1      -1.684   2.512  -0.524  1.00  0.00           H  
+HETATM   45  H4  UNL     1       1.278  -5.038  -3.613  1.00  0.00           H  
+CONECT    1    2    7   11   13
+CONECT    2    3    8   14
+CONECT    3    4    9   15
+CONECT    4    5   10   16
+CONECT    5    6   11   17
+CONECT    6   12   18   19
+CONECT    7   42
+CONECT    8   43
+CONECT    9   20
+CONECT   10   26
+CONECT   12   44
+CONECT   21   22   26   27   32
+CONECT   22   23   28   33
+CONECT   23   24   29   34
+CONECT   24   25   30   35
+CONECT   25   31   36   37
+CONECT   26   30   38
+CONECT   27   39
+CONECT   28   40
+CONECT   29   41
+CONECT   31   45
+END

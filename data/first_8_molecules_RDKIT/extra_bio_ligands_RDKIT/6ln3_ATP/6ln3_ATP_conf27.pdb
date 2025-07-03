@@ -1,0 +1,95 @@
+COMPND    ADENYLATE KINASE
+HETATM    1  PG  ATP A 302      -3.885   2.634   6.181  1.00 19.35           P  
+HETATM    2  O1G ATP A 302      -2.643   3.279   7.158  1.00 19.32           O  
+HETATM    3  O2G ATP A 302      -4.435   1.322   7.135  1.00 19.47           O  
+HETATM    4  O3G ATP A 302      -5.010   3.884   6.376  1.00 19.23           O  
+HETATM    5  PB  ATP A 302      -4.459   0.628   4.435  1.00 17.98           P  
+HETATM    6  O1B ATP A 302      -4.860   2.068   3.602  1.00 15.46           O  
+HETATM    7  O2B ATP A 302      -2.801   0.607   4.628  1.00 17.35           O  
+HETATM    8  O3B ATP A 302      -5.021   1.517   5.694  1.00 19.13           O  
+HETATM    9  PA  ATP A 302      -3.507  -0.298   2.191  1.00 18.99           P  
+HETATM   10  O1A ATP A 302      -4.854   0.011   1.216  1.00 18.08           O  
+HETATM   11  O2A ATP A 302      -3.225  -1.907   1.750  1.00 16.98           O  
+HETATM   12  O3A ATP A 302      -3.678  -0.741   3.799  1.00 18.56           O  
+HETATM   13  O5' ATP A 302      -2.574  -0.545   0.841  1.00 21.03           O  
+HETATM   14  C5' ATP A 302      -1.205  -0.413   1.065  1.00 20.63           C  
+HETATM   15  C4' ATP A 302      -0.518  -0.657  -0.234  1.00 20.35           C  
+HETATM   16  O4' ATP A 302       0.874  -0.562  -0.175  1.00 18.40           O  
+HETATM   17  C3' ATP A 302      -0.700  -2.019  -0.818  1.00 21.59           C  
+HETATM   18  O3' ATP A 302      -1.968  -2.300  -1.264  1.00 22.81           O  
+HETATM   19  C2' ATP A 302       0.331  -1.983  -1.955  1.00 20.13           C  
+HETATM   20  O2' ATP A 302      -0.393  -1.618  -3.091  1.00 20.94           O  
+HETATM   21  C1' ATP A 302       1.211  -0.838  -1.498  1.00 20.34           C  
+HETATM   22  N9  ATP A 302       2.626  -1.128  -1.615  1.00 21.69           N  
+HETATM   23  C8  ATP A 302       3.349   0.059  -1.122  1.00 23.38           C  
+HETATM   24  N7  ATP A 302       4.667  -0.040  -1.738  1.00 23.69           N  
+HETATM   25  C5  ATP A 302       4.576  -0.989  -2.805  1.00 25.21           C  
+HETATM   26  C6  ATP A 302       5.131  -0.506  -4.125  1.00 24.64           C  
+HETATM   27  N6  ATP A 302       5.359   0.911  -4.009  1.00 21.85           N  
+HETATM   28  N1  ATP A 302       4.151  -0.813  -5.148  1.00 26.27           N  
+HETATM   29  C2  ATP A 302       3.615  -2.157  -4.965  1.00 26.77           C  
+HETATM   30  N3  ATP A 302       2.755  -2.230  -3.772  1.00 26.00           N  
+HETATM   31  C4  ATP A 302       3.060  -1.066  -3.008  1.00 23.98           C  
+HETATM   32  H1  UNL     1      -5.281   2.463   6.113  1.00  0.00           H  
+HETATM   33  H2  UNL     1      -3.089   3.347   8.062  1.00  0.00           H  
+HETATM   34  H3  UNL     1      -4.113   1.403   8.083  1.00  0.00           H  
+HETATM   35  H4  UNL     1      -4.595   4.781   6.338  1.00  0.00           H  
+HETATM   36  H5  UNL     1      -5.700   1.177   4.838  1.00  0.00           H  
+HETATM   37  H6  UNL     1      -4.922   1.862   2.640  1.00  0.00           H  
+HETATM   38  H7  UNL     1      -2.498   1.567   4.678  1.00  0.00           H  
+HETATM   39  H8  UNL     1      -2.680  -0.953   3.122  1.00  0.00           H  
+HETATM   40  H9  UNL     1      -5.539  -0.658   1.503  1.00  0.00           H  
+HETATM   41  H10 UNL     1      -4.042  -2.467   1.806  1.00  0.00           H  
+HETATM   42  H11 UNL     1      -0.886  -1.089   1.855  1.00  0.00           H  
+HETATM   43  H12 UNL     1      -1.010   0.619   1.376  1.00  0.00           H  
+HETATM   44  H13 UNL     1      -0.836   0.091  -0.988  1.00  0.00           H  
+HETATM   45  H14 UNL     1      -0.366  -2.747  -0.051  1.00  0.00           H  
+HETATM   46  H15 UNL     1      -2.487  -1.485  -1.387  1.00  0.00           H  
+HETATM   47  H16 UNL     1       0.864  -2.930  -2.068  1.00  0.00           H  
+HETATM   48  H17 UNL     1      -1.182  -2.234  -3.172  1.00  0.00           H  
+HETATM   49  H18 UNL     1       0.952   0.109  -2.055  1.00  0.00           H  
+HETATM   50  H19 UNL     1       3.381   0.098  -0.028  1.00  0.00           H  
+HETATM   51  H20 UNL     1       2.830   0.917  -1.606  1.00  0.00           H  
+HETATM   52  H21 UNL     1       5.351  -0.276  -0.990  1.00  0.00           H  
+HETATM   53  H22 UNL     1       5.004  -1.968  -2.578  1.00  0.00           H  
+HETATM   54  H23 UNL     1       6.067  -1.052  -4.378  1.00  0.00           H  
+HETATM   55  H24 UNL     1       5.476   1.206  -3.013  1.00  0.00           H  
+HETATM   56  H25 UNL     1       6.266   1.137  -4.485  1.00  0.00           H  
+HETATM   57  H26 UNL     1       4.603  -0.815  -6.082  1.00  0.00           H  
+HETATM   58  H27 UNL     1       4.465  -2.834  -4.767  1.00  0.00           H  
+HETATM   59  H28 UNL     1       3.092  -2.489  -5.863  1.00  0.00           H  
+HETATM   60  H29 UNL     1       2.959  -3.091  -3.225  1.00  0.00           H  
+HETATM   61  H30 UNL     1       2.756  -0.133  -3.488  1.00  0.00           H  
+CONECT    1    2    3    4    8
+CONECT    1   32
+CONECT    2   33
+CONECT    3   34
+CONECT    4   35
+CONECT    5    6    7    8   12
+CONECT    5   36
+CONECT    6   37
+CONECT    7   38
+CONECT    9   10   11   12   13
+CONECT    9   39
+CONECT   10   40
+CONECT   11   41
+CONECT   13   14
+CONECT   14   15   42   43
+CONECT   15   16   17   44
+CONECT   16   21
+CONECT   17   18   19   45
+CONECT   18   46
+CONECT   19   20   21   47
+CONECT   20   48
+CONECT   21   22   49
+CONECT   22   23   31
+CONECT   23   24   50   51
+CONECT   24   25   52
+CONECT   25   26   31   53
+CONECT   26   27   28   54
+CONECT   27   55   56
+CONECT   28   29   57
+CONECT   29   30   58   59
+CONECT   30   31   60
+CONECT   31   61
+END

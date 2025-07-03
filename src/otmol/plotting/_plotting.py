@@ -122,7 +122,8 @@ def interactive_alignment_plot(
     assignment: np.ndarray = None,
     nameA: str = 'A', 
     nameB: str = 'B', 
-    save: bool = False
+    save: bool = False,
+    show_labels: bool = True,
     ) -> None:
     fig = go.Figure()
     """Plot the alignment of two structures in 3D in an interactive plot.
@@ -157,7 +158,9 @@ def interactive_alignment_plot(
         x=X_A[:, 0],
         y=X_A[:, 1],
         z=X_A[:, 2],
-        mode='markers',
+        mode='markers+text' if show_labels else 'markers',  # Add text mode
+        text=T_A if show_labels else None,  # Add element labels
+        textposition="top center",  # Position the text above the points
         marker=dict(
             size=[ATOMIC_SIZE[label]*20 for label in T_A], 
             color='red',
@@ -171,7 +174,9 @@ def interactive_alignment_plot(
         x=X_B[:, 0],
         y=X_B[:, 1],
         z=X_B[:, 2],
-        mode='markers',
+        mode='markers+text' if show_labels else 'markers',  # Add text mode
+        text=T_B if show_labels else None,  # Add element labels
+        textposition="top center",  # Position the text above the points
         marker=dict(
             size=[ATOMIC_SIZE[label]*20 for label in T_B], 
             color='blue',

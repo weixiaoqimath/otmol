@@ -1,6 +1,7 @@
 from typing import Dict, Tuple, TypedDict, Union
 import numpy as np
 from openbabel import openbabel, pybel
+from rdkit import Chem
 #from scipy.sparse.csgraph import floyd_warshall
 import os
 
@@ -54,6 +55,34 @@ ATOMIC_PROPERTIES = {
     "Cl": {"en": 3.16, "vdw": 1.75, "cov": 0.99},  # Chlorine (Cl)
     "Br": {"en": 2.96, "vdw": 1.85, "cov": 1.14},  # Bromine (Br)
 }
+
+
+def process_rdkit_mol(mol: Chem.rdchem.Mol, heavy_atoms_only: bool = False) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """process a rdkit mol object. Assume it is a single molecule.
+    """
+    #if heavy_atoms_only:
+    #    mol = Chem.RemoveHs(mol)
+        
+    n = len(mol.GetAtoms())
+    X = np.empty([n, 3], dtype=float)
+    T = np.empty([n], dtype=str)
+    B = np.zeros([n, n], dtype=float)
+    for i, atom in enumerate(mol.GetAtoms()):
+        X[i, :] = np.array(mol.GetConformer().GetAtomPosition(i))
+        T[i] = atom.GetSymbol()
+
+    for bond in mol.GetBonds():
+        B[bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()] = 1
+        B[bond.GetEndAtomIdx(), bond.GetBeginAtomIdx()] = 1
+
+    if heavy_atoms_only:
+        # Create mask for non-hydrogen atoms
+        heavy_mask = T != 'H'
+            # Apply mask to all arrays
+        X = X[heavy_mask]
+        T = T[heavy_mask]
+        B = B[heavy_mask, :][:, heavy_mask]
+    return X, T, B
 
 
 def process_molecule(mol: pybel.Molecule, heavy_atoms_only: bool = False) -> tuple[np.ndarray, np.ndarray, np.ndarray]:

@@ -605,7 +605,7 @@ If you find this script useful for any publishable work, please cite the corresp
 
    if args.noHydrogens:
       name = str(args.xyz2.split("/")[-1].split(".xyz")[0]) + "-aligned_to-" + \
-             str(args.xyz1.split("/")[-1]) + "-noHydrogens.xyz" # modified by Xiaoqi
+             str(args.xyz1.split("/")[-1]) # modified by Xiaoqi
    else:
       name = str(args.xyz2.split("/")[-1].split(".xyz")[0]) + "-aligned_to-" + str(args.xyz1.split("/")[-1]) # modified by Xiaoqi
 

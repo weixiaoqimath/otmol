@@ -1,5 +1,6 @@
 from ._molecule_processing import process_molecule
 from ._molecule_processing import process_rdkit_mol
+from ._molecule_processing import parse_pdb_file
 from ._molecule_processing import parse_sy2
 from ._molecule_processing import parse_mna
 from ._molecule_processing import write_xyz_with_custom_labels

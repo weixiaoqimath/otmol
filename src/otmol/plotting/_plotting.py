@@ -112,6 +112,80 @@ def plot_alignment(
                 ax.plot([X2[i,0],X2[j,0]],[X2[i,1],X2[j,1]],[X2[i,2],X2[j,2]], c='gray', linewidth=3)
     return
 
+
+def interactive_molecule_plot(
+    X: np.ndarray,
+    T: np.ndarray,
+    B: np.ndarray,
+    name: str,
+    save: bool = False,
+    show_labels: bool = True,
+    ) -> None:
+    fig = go.Figure()
+    # Add scatter points for structure A with different sizes for different atoms
+    fig.add_trace(go.Scatter3d(
+        x=X[:, 0],
+        y=X[:, 1],
+        z=X[:, 2],
+        mode='markers+text' if show_labels else 'markers',  # Add text mode
+        text=T if show_labels else None,  # Add element labels
+        textposition="top center",  # Position the text above the points
+        marker=dict(
+            size=[ATOMIC_SIZE[label]*20 for label in T], 
+            color='red',
+            symbol='circle'
+        ),
+        name=name
+    ))
+
+    # Add bonds for A
+    for i in range(len(B)):
+        for j in range(i+1, len(B)):
+            if B[i,j] == 1:  # if there's a bond
+                fig.add_trace(go.Scatter3d(
+                    x=[X[i,0], X[j,0]],
+                    y=[X[i,1], X[j,1]],
+                    z=[X[i,2], X[j,2]],
+                    mode='lines',
+                    line=dict(
+                        color='red',
+                        width=2
+                    ),
+                    showlegend=False
+                ))
+
+    # Update layout
+    fig.update_layout(
+        title='name',
+        scene=dict(
+            xaxis = dict(visible=False),
+            yaxis = dict(visible=False),
+            zaxis = dict(visible=False),
+            xaxis_title='X',
+            yaxis_title='Y',
+            zaxis_title='Z',
+            aspectmode='data',
+        ),
+        showlegend=True,
+    )
+
+    # Save the figure as HTML
+    if save:
+        fig.write_html("{}.html".format(name,))
+
+    config = {
+        'toImageButtonOptions': {
+            'format': 'png', # one of png, svg, jpeg, webp
+            #'filename': 'custom_image',
+            'height': 500,
+            'width': 700,
+            'scale':2 # Multiply title/legend/axis/canvas sizes by this factor
+        }
+    }
+    # Show the figure
+    fig.show(config=config)
+
+
 def interactive_alignment_plot(
     X_A: np.ndarray,
     X_B: np.ndarray,
@@ -125,7 +199,6 @@ def interactive_alignment_plot(
     save: bool = False,
     show_labels: bool = True,
     ) -> None:
-    fig = go.Figure()
     """Plot the alignment of two structures in 3D in an interactive plot.
 
     Parameters
@@ -152,7 +225,7 @@ def interactive_alignment_plot(
     save : bool, optional
         Whether to save the figure as an HTML file.
     """
-
+    fig = go.Figure()
     # Add scatter points for structure A with different sizes for different atoms
     fig.add_trace(go.Scatter3d(
         x=X_A[:, 0],
@@ -235,6 +308,35 @@ def interactive_alignment_plot(
                 ),
             showlegend=False
             ))
+        
+    if True:
+        #bonding_info_A = [B_A[i, j] for i in range(len(X_A)) for j in range(len(X_A)) if i < j]
+        #bonding_info_B = [B_B[assignment[i], assignment[j]] for i in range(len(X_A)) for j in range(len(X_A)) if i < j]
+        for i in range(len(X_A)):
+            for j in range(len(X_A)):
+                if i < j and B_A[i,j] != B_B[assignment[i],assignment[j]]:
+                    fig.add_trace(go.Scatter3d(
+                        x=[X_A[i,0], X_A[j,0]],
+                        y=[X_A[i,1], X_A[j,1]],
+                        z=[X_A[i,2], X_A[j,2]],
+                        mode='lines',
+                        line=dict(
+                            color='orange',
+                            width=2
+                        ),
+                        showlegend=False
+                    ))
+                    fig.add_trace(go.Scatter3d(
+                        x=[X_B[assignment[i],0], X_B[assignment[j],0]],
+                        y=[X_B[assignment[i],1], X_B[assignment[j],1]],
+                        z=[X_B[assignment[i],2], X_B[assignment[j],2]],
+                        mode='lines',
+                        line=dict(
+                            color='orange',
+                            width=2
+                        ),
+                        showlegend=False
+                    ))
 
     # Update layout
     fig.update_layout(

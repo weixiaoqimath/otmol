@@ -1,4 +1,4 @@
-nameA,nameB,RMSD(OTMol),alpha,mismatch_bond,assignment
+nameA,nameB,RMSD(OTMol),alpha,# mismatched bond,assignment
 5bvs_EIC,5bvs_EIC_conf0,1.5183537385192407,,0,[ 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19]
 5bvs_EIC,5bvs_EIC_conf1,2.930815917195436,,0,[ 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19]
 5bvs_EIC,5bvs_EIC_conf2,2.425600029085225,,0,[ 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 19 18]

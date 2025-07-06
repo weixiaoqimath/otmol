@@ -1,9 +1,17 @@
-from typing import Dict, Tuple, TypedDict, Union
+from typing import Dict, Tuple, TypedDict, Union, List
 import numpy as np
 from openbabel import openbabel, pybel
 from rdkit import Chem
 #from scipy.sparse.csgraph import floyd_warshall
 import os
+
+# Add Biopython import
+try:
+    from Bio import PDB
+    from Bio.PDB.Polypeptide import is_aa
+    BIOPYTHON_AVAILABLE = True
+except ImportError:
+    BIOPYTHON_AVAILABLE = False
 
 ATOMIC_NAME = {
     1: "H",
@@ -237,3 +245,113 @@ def write_xyz_with_custom_labels(
         f.write(f"{comment}\n")
         for coord, atom_name in zip(coordinates, labels):
             f.write(f"{atom_name:4s} {coord[0]:12.6f} {coord[1]:12.6f} {coord[2]:12.6f}\n")
+
+
+def parse_pdb_file(file_path: str) -> Tuple[np.ndarray, List[str], np.ndarray]:
+    """
+    Parse a PDB file and extract coordinates, element names, and adjacency matrix.
+    
+    Args:
+        file_path (str): Path to the PDB file
+        
+    Returns:
+        Tuple[np.ndarray, List[str], np.ndarray]: 
+            - X: coordinates array (N, 3) where N is number of atoms
+            - T: list of element names (N,)
+            - B: adjacency matrix (N, N) where B[i,j] = 1 if atoms i and j are bonded
+    """
+    
+    # Initialize data structures
+    atoms = []  # List to store atom information
+    bonds = []  # List to store bond information
+    
+    with open(file_path, 'r') as f:
+        for line in f:
+            line = line.strip()
+            
+            # Parse ATOM/HETATM records
+            if line.startswith(('ATOM', 'HETATM')):
+                atom_info = parse_atom_line(line)
+                if atom_info:
+                    atoms.append(atom_info)
+            
+            # Parse CONECT records
+            elif line.startswith('CONECT'):
+                bond_info = parse_conect_line(line)
+                if bond_info:
+                    bonds.append(bond_info)
+    
+    # Convert to numpy arrays
+    if not atoms:
+        raise ValueError("No atoms found in PDB file")
+    
+    # Extract coordinates and element names
+    X = np.array([atom['coords'] for atom in atoms])
+    T = np.array([atom['element'] for atom in atoms])
+    
+    # Create adjacency matrix
+    num_atoms = len(atoms)
+    B = np.zeros((num_atoms, num_atoms), dtype=int)
+    
+    # Fill adjacency matrix based on CONECT records
+    for bond_info in bonds:
+        central_atom = bond_info[0]         
+        for connected_atom in bond_info[1:]:
+            B[central_atom-1, connected_atom-1] = 1
+            B[connected_atom-1, central_atom-1] = 1  # Symmetric
+    
+    heavy_mask = [True if T[i] not in ['H', 'D'] else False for i in range(len(T))]
+    X = X[heavy_mask]
+    T = T[heavy_mask]
+    B = B[heavy_mask, :][:, heavy_mask]
+
+    return X, T, B
+
+def parse_atom_line(line: str) -> dict:
+    """
+    Parse an ATOM or HETATM line from PDB format.
+    
+    Args:
+        line (str): ATOM or HETATM line
+        
+    Returns:
+        dict: Dictionary containing atom information
+    """
+    # Extract atom serial number (1-indexed)
+    atom_serial = int(line[6:11].strip())
+        
+    # Extract coordinates (columns 30-54)
+    x = float(line[30:38].strip())
+    y = float(line[38:46].strip())
+    z = float(line[46:54].strip())
+        
+    # Extract element name (columns 76-78)
+    element = line[76:78].strip()
+        
+    return {
+        'serial': atom_serial,
+        'coords': [x, y, z],
+        'element': element
+    }
+
+def parse_conect_line(line: str) -> List[int]:
+    """
+    Parse a CONECT line from PDB format.
+    
+    Args:
+        line (str): CONECT line
+        
+    Returns:
+        List[int]: List of atoms [central_atom, connected_atom1, connected_atom2, ...]
+    """
+    # CONECT format: CONECT, central_atom, connected_atom1, connected_atom2, ...
+    # Example: CONECT    1    2   52
+    parts = line.split()
+        
+    if len(parts) < 3:
+        return None
+        
+    # Convert all parts to integers, skipping the first part ("CONECT")
+    atoms = [int(atom) for atom in parts[1:] if atom.isdigit()]
+        
+    return atoms

@@ -1,11 +1,12 @@
 from typing import List, Tuple, Union, Optional
-
 import numpy as np
 import ot
 from scipy.spatial import distance_matrix
+import os
 
 from .._optimal_transport import fsgw_mvc, perform_sOT_log
 from ._distance_processing import geodesic_distance
+from ._molecule_processing import write_xyz_with_custom_labels
 from ._utils import is_permutation, permutation_to_matrix, cost_matrix, mismatched_bond_counter
 from ._utils import root_mean_square_deviation, add_molecule_indices
 from ._utils import add_perturbation, normalize_matrix, resolve_sinkhorn_conflicts
@@ -23,7 +24,9 @@ def molecule_alignment(
         molecule_sizes: List[int] = None,
         reflection: bool = False,
         cst_D: float = 0.,
-        count_mismatched_bond: bool = False,
+        minimize_mismatched_edges: bool = False,
+        save_path: str = None,
+        return_BCI: bool = False,
         ) -> Tuple[np.ndarray, float, float]:
     """Compute optimal transport and alignment between molecules.
 
@@ -43,8 +46,16 @@ def molecule_alignment(
         List of alpha values to try for fGW or fsGW, by default None.
     molecule_sizes : List[int], optional
         Sizes of molecules, by default None.
-    reg : float, optional
-        Regularization parameter for sinkhorn, by default 1e-2.
+    reflection : bool, optional
+        Whether to allow reflection in the alignment, by default False.
+    cst_D : float, optional
+        Regularization parameter for distance matrix, by default 0..
+    minimize_mismatched_edges : bool, optional
+        Whether to minimize mismatched edges in the alignment, by default False.
+    return_BCI: bool, optional
+        Whether to return the BCI value, by default False. Only use when minimize_mismatched_edges is False.
+    save_path : str, optional
+        Path to save the aligned molecule, by default None.
 
     Returns
     -------
@@ -56,6 +67,7 @@ def molecule_alignment(
         Best alpha value.
     """
     if molecule_sizes is not None:
+        T_B_original = T_B.copy()
         T_A, T_B = add_molecule_indices(T_A, T_B, molecule_sizes)
     C = cost_matrix(T_A = T_A, T_B = T_B, k = np.inf)
 
@@ -78,8 +90,10 @@ def molecule_alignment(
     rmsd_best = 1e10
     mismatched_bond_best = 1e10
     assignment_list = []
+    assignment_set = set()
     assignment_best = None
     alpha_best = None
+    X_B_aligned_best = None
     for alpha in alpha_list:
         if method == 'fGW':
             # Fused Gromov-Wasserstein
@@ -88,10 +102,11 @@ def molecule_alignment(
             # Fused Supervised Gromov-Wasserstein
             P = fsgw_mvc(D_A, D_B, M=C, fsgw_alpha=alpha, fsgw_gamma=10, fsgw_niter=10, fsgw_eps=0.001)
         assignment = np.argmax(P, axis=1)
-        if is_permutation(T_A=T_A, T_B=T_B, perm=assignment, case='single'):
+        if is_permutation(T_A=T_A, T_B=T_B, perm=assignment, case='single') and tuple(assignment) not in assignment_set:
             assignment_list.append(assignment)
+            assignment_set.add(tuple(assignment))
 
-    if count_mismatched_bond:  
+    if minimize_mismatched_edges:  
         n = len(T_A)
         for assignment in assignment_list:
             mismatched_bond = mismatched_bond_counter(B_A, B_B, assignment, n, n)
@@ -103,15 +118,30 @@ def molecule_alignment(
                 if rmsd < rmsd_best:
                     rmsd_best = rmsd
                     assignment_best = assignment
+                    alpha_best = alpha
+                    X_B_aligned_best = X_B_aligned[assignment]
             if mismatched_bond == mismatched_bond_best:
                 X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(assignment), reflection)
                 rmsd = root_mean_square_deviation(X_A, X_B_aligned[assignment])
                 if rmsd < rmsd_best:
                     rmsd_best = rmsd
-                    assignment_best = assignment              
+                    assignment_best = assignment     
+                    alpha_best = alpha
+                    X_B_aligned_best = X_B_aligned[assignment]
         if assignment_best is None:
             print('No valid assignment found') 
-        return assignment_best, rmsd_best, alpha_best, mismatched_bond_best
+            return None, None, None, None
+        if save_path is not None:
+            if molecule_sizes is not None:
+                T_B = T_B_original
+            write_xyz_with_custom_labels(
+                os.path.join(save_path), 
+                X_B_aligned_best, 
+                T_B[assignment_best], 
+                comment = 'aligned by OTMol'
+                )
+        BCI = mismatched_bond_counter(B_A, B_B, assignment_best, n, n, only_A_bonds=True)[0]/np.sum(B_A)*2
+        return assignment_best, rmsd_best, alpha_best, BCI
     else:
         for assignment in assignment_list:
             X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(assignment), reflection)
@@ -120,9 +150,24 @@ def molecule_alignment(
                 rmsd_best = rmsd
                 assignment_best = assignment
                 alpha_best = alpha
+                X_B_aligned_best = X_B_aligned[assignment]
         if assignment_best is None:
             print('No valid assignment found')
-        return assignment_best, rmsd_best, alpha_best
+            return None, None, None
+        if save_path is not None:
+            if molecule_sizes is not None:
+                T_B = T_B_original
+            write_xyz_with_custom_labels(
+                os.path.join(save_path), 
+                X_B_aligned_best, 
+                T_B[assignment_best], 
+                comment = 'aligned by OTMol'
+                )
+        if return_BCI:
+            BCI = mismatched_bond_counter(B_A, B_B, assignment_best, len(T_A), len(T_B), only_A_bonds=True)[0]/np.sum(B_A)*2
+            return assignment_best, rmsd_best, alpha_best, BCI
+        else:
+            return assignment_best, rmsd_best, alpha_best
     
 
 def molecule_alignment_with_perturbation(
@@ -181,13 +226,15 @@ def molecule_alignment_with_perturbation(
     rmsd_best = 1e10
     mismatched_bond_best = 1e10
     assignment_list = []
+    assignment_set = set()
     assignment_best = None
     alpha_best = None
     for alpha in alpha_list:
         P = ot.gromov.fused_gromov_wasserstein(C_finite, D_A, D_B, alpha=alpha, symmetric=True)
         assignment = np.argmax(P, axis=1)
-        if is_permutation(T_A=T_A, T_B=T_B, perm=assignment, case='single'):
+        if is_permutation(T_A=T_A, T_B=T_B, perm=assignment, case='single') and tuple(assignment) not in assignment_set:
             assignment_list.append(assignment)
+            assignment_set.add(tuple(assignment))
 
     for i in range(n_perturbation):
         X_A_perturbed = add_perturbation(X = X_A, noise_scale = scale, random_state = i) 
@@ -198,8 +245,9 @@ def molecule_alignment_with_perturbation(
         for j in alpha_list:
             P = ot.gromov.fused_gromov_wasserstein(C, D_A_perturbed, D_B_perturbed, alpha = j, symmetric=True)
             assignment = np.argmax(P, axis=1)
-            if is_permutation(T_A, T_B, assignment, case='single'):
+            if is_permutation(T_A, T_B, assignment, case='single') and tuple(assignment) not in assignment_set:
                 assignment_list.append(assignment)  
+                assignment_set.add(tuple(assignment))
 
     n = len(T_A)
     for assignment in assignment_list:
@@ -237,6 +285,7 @@ def cluster_alignment(
         n_trials: int = 500,
         representative_option: str = 'center',
         reflection: bool = False,
+        save_path: str = None,
         ):
     """Compute optimal transport and alignment between clusters.
 
@@ -274,10 +323,11 @@ def cluster_alignment(
     float
         Best p value (for 'same element' case).
     """
+    rmsd_best = 1e10
+    p_best = None
+    permutation_best = None
+    X_B_aligned_best = None
     if case == 'same element':
-        rmsd_best = 1e10
-        p_best = None
-        permutation_best = None
         a = np.ones(X_A.shape[0])/X_A.shape[0]
         b = np.ones(X_B.shape[0])/X_B.shape[0]
         Euc_A, Euc_B = distance_matrix(X_A, X_A), distance_matrix(X_B, X_B)
@@ -299,6 +349,7 @@ def cluster_alignment(
                         rmsd_best = rmsd
                         p_best = p
                         permutation_best = ot_assignment
+                        X_B_aligned_best = X_B_aligned[ot_assignment]
                 if method == 'sinkhorn': # sinkhorn may not always output a permutation matrix
                     P_ot = ot.sinkhorn(a, b, D_ot/D_ot.max(), reg=reg, numItermax=numItermax)
                     assignments = resolve_sinkhorn_conflicts(P_ot)
@@ -311,9 +362,18 @@ def cluster_alignment(
                             rmsd_best = rmsd
                             p_best = p
                             permutation_best = ot_assignment
+                            X_B_aligned_best = X_B_aligned[ot_assignment]
 
         if permutation_best is None:
             print('No valid permutation found')
+            return None, None, None
+        if save_path is not None: # T_B will be used to write the xyz file
+            write_xyz_with_custom_labels(
+                os.path.join(save_path), 
+                X_B_aligned_best, 
+                T_B[permutation_best], 
+                comment = 'aligned by OTMol'
+                )
         return permutation_best, rmsd_best, p_best
     
     if case == 'molecule cluster':
@@ -323,8 +383,6 @@ def cluster_alignment(
             representative_A, representative_B = X_A[T_A == representative_option], X_B[T_B == representative_option]
         list_P = perturbation_before_gw(representative_A, representative_B, p_list = [1], n_trials = n_trials, scale = 0.1)
         print('The number of candidate molecular level permutations is', len(list_P))
-        rmsd_best = 1e10
-        permutation_best = None
         #c_A, c_B = np.sum(X_A, axis=0)/X_A.shape[0], np.sum(X_B, axis=0)/X_B.shape[0]
         for perm in list_P:
             P = permutation_to_matrix(perm)
@@ -360,9 +418,18 @@ def cluster_alignment(
             if rmsd < rmsd_best:
                 rmsd_best = rmsd
                 permutation_best = ot_assignment
+                X_B_aligned_best = X_B_aligned[ot_assignment]
 
         if permutation_best is None:
             print('No valid permutation found')
+            return None, None
+        if save_path is not None: 
+            write_xyz_with_custom_labels(
+                os.path.join(save_path), 
+                X_B_aligned_best, 
+                T_B[permutation_best], 
+                comment = 'aligned by OTMol'
+                )
         return permutation_best, rmsd_best        
 
 def kabsch(

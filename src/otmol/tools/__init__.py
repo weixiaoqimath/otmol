@@ -9,3 +9,4 @@ from ._alignment import perturbation_before_gw, molecule_alignment_with_perturba
 from ._utils import root_mean_square_deviation, parse_molecule_pairs 
 from ._utils import compare_labels, cost_matrix, add_molecule_indices  
 from ._utils import is_permutation, permutation_to_matrix, add_perturbation
+from ._utils import mismatched_bond_counter

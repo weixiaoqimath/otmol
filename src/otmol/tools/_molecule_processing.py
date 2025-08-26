@@ -247,7 +247,9 @@ def write_xyz_with_custom_labels(
             f.write(f"{atom_name:4s} {coord[0]:12.6f} {coord[1]:12.6f} {coord[2]:12.6f}\n")
 
 
-def parse_pdb_file(file_path: str) -> Tuple[np.ndarray, List[str], np.ndarray]:
+def parse_pdb_file(
+        file_path: str = None,
+        ) -> Tuple[np.ndarray, List[str], np.ndarray]:
     """
     Parse a PDB file and extract coordinates, element names, and adjacency matrix.
     
@@ -319,6 +321,9 @@ def parse_atom_line(line: str) -> dict:
     """
     # Extract atom serial number (1-indexed)
     atom_serial = int(line[6:11].strip())
+    
+    # Extract residue name (columns 17-20)
+    residue_name = line[17:20].strip()
         
     # Extract coordinates (columns 30-54)
     x = float(line[30:38].strip())
@@ -330,6 +335,7 @@ def parse_atom_line(line: str) -> dict:
         
     return {
         'serial': atom_serial,
+        'residue': residue_name,
         'coords': [x, y, z],
         'element': element
     }

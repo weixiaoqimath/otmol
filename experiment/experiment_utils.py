@@ -7,6 +7,8 @@ from typing import List
 import gc
 import psutil
 import numpy as np
+from pathlib import Path
+
 
 
 def wc_experiment(mol_pair, 
@@ -34,7 +36,9 @@ def wc_experiment(mol_pair,
             method = method, n_atoms = n_atoms, 
             reg = reg, numItermax = numItermax, 
             representative_option = representative_option,
-            n_trials = n_trials)
+            n_trials = n_trials,
+            save_path = f'./otmol_output/{nameB.split(".")[0]}_to_{nameA.split(".")[0]}_otmol_rep={representative_option}.xyz'
+            )
             
         end_time = time.time()
 
@@ -65,8 +69,8 @@ def ng_experiment(mol_pair,
                reg: float = 1e-4,
                numItermax: int = 10000,
                save: bool = False, # whether to save the results
-               plain_GW: bool = False,
-               n_trials: int = 100,
+               #plain_GW: bool = False,
+               #n_trials: int = 100,
                perturbation: bool = False,
                ):
     results = []
@@ -79,9 +83,18 @@ def ng_experiment(mol_pair,
         X_A, T_A, _ = otm.tl.process_molecule(molA) 
         X_B, T_B, _ = otm.tl.process_molecule(molB)
         if not perturbation:
-            optimal_assignment, rmsd_best, p_best = otm.tl.cluster_alignment(X_A = X_A, X_B = X_B, case = 'same element', method = method, p_list = p_list, reg = reg, numItermax = numItermax)
-        else:
-            optimal_assignment, rmsd_best = otm.tl.perturbation_before_gw(X_A = X_A, X_B = X_B, n_trials = n_trials, return_best = True, scale = None)
+            optimal_assignment, rmsd_best, _ = otm.tl.cluster_alignment(
+                X_A = X_A, X_B = X_B, 
+                T_A = T_A, T_B = T_B,
+                case = 'same element', 
+                method = method, 
+                p_list = p_list, 
+                reg = reg, 
+                numItermax = numItermax,
+                save_path = f'./otmol_output/{nameB}_to_{nameA}_otmol.xyz'
+                )
+        #else:
+        #    optimal_assignment, rmsd_best = otm.tl.perturbation_before_gw(X_A = X_A, X_B = X_B, n_trials = n_trials, return_best = True, scale = None)
         
         end_time = time.time()
         if not otm.tl.is_permutation(perm=optimal_assignment):
@@ -145,12 +158,18 @@ def experiment(
             T_A = otm.tl.parse_mna(os.path.join(data_path, nameA + '.mna'))
             T_B = otm.tl.parse_mna(os.path.join(data_path, nameB + '.mna'))
         if dataset_name == 'FGG':
-            optimal_assignment, rmsd_best, alpha_best = otm.tl.molecule_alignment(
+            if cst_D == 0.:
+                save_path = f'./otmol_output/{nameB}_to_{nameA}_otmol_{setup.split(" ")[0]}_{setup.split(" ")[1]}_c=0.xyz'
+            if cst_D == 0.5:
+                save_path = f'./otmol_output/{nameB}_to_{nameA}_otmol_{setup.split(" ")[0]}_{setup.split(" ")[1]}_c=0.5.xyz'
+            optimal_assignment, rmsd_best, alpha_best, BCI = otm.tl.molecule_alignment(
                 X_A, X_B, T_A, T_B, B_A, B_B, 
                 method = method, 
                 alpha_list = alpha_list, 
                 molecule_sizes = molecule_sizes, 
-                cst_D = cst_D
+                cst_D = cst_D,
+                minimize_mismatched_edges = True,
+                save_path = save_path
                 )
                     
             if not otm.tl.is_permutation(T_A = T_A, T_B = T_B, perm = optimal_assignment, case = 'single'): 
@@ -161,17 +180,22 @@ def experiment(
                 'RMSD(OTMol+{})'.format(setup): rmsd_best,
                 '# atoms': X_A.shape[0],
                 'alpha': alpha_best,
+                'BCI': BCI,
                 'assignment': optimal_assignment,
                 }) 
-            print(i, nameA, nameB, f"{rmsd_best:.2f}")
+            print(i, nameA, nameB, f"{rmsd_best:.2f}", f"{BCI}")
         if dataset_name == 'S1MAW1':
-            optimal_assignment, rmsd_best, alpha_best, mismatched_bond_best = otm.tl.molecule_alignment(
+            if cst_D == 1:
+                save_path = f'./otmol_output/{nameB}_to_{nameA}_otmol_{setup.split(" ")[0]}_{setup.split(" ")[1]}_c=1.xyz'
+            optimal_assignment, rmsd_best, alpha_best, BCI = otm.tl.molecule_alignment(
                 X_A, X_B, T_A, T_B, B_A, B_B, 
                 method = method, 
                 alpha_list = alpha_list, 
                 molecule_sizes = molecule_sizes, 
                 cst_D = cst_D,
-                count_mismatched_bond = True)
+                minimize_mismatched_edges = True,
+                save_path = save_path
+                )
             if not otm.tl.is_permutation(T_A = T_A, T_B = T_B, perm = optimal_assignment, case = 'single'): 
                 print(nameA, nameB, 'Warning: not a proper permutation')
             results.append({
@@ -180,15 +204,112 @@ def experiment(
                 'RMSD(OTMol+{})'.format(setup): rmsd_best,
                 '# atoms': X_A.shape[0],
                 'alpha': alpha_best,
-                'mismatch_bond': mismatched_bond_best,
+                'BCI': BCI,
                 'assignment': optimal_assignment,
                 }) 
-            print(i, nameA, nameB, f"{rmsd_best:.2f}", f"{mismatched_bond_best}")
+            print(i, nameA, nameB, f"{rmsd_best:.2f}", f"{BCI}")
 
     results_df = pd.DataFrame(results)
     setup = setup.replace(' ', '_')
     if save:
         results_df.to_csv(os.path.join('./otmol_output', f'{dataset_name}_{setup}_{method}_cstD={cst_D:.1f}_results.csv'), index=False)
+    return pd.DataFrame(results)
+
+
+def experiment2(
+        data_path: str = None,
+        mol_pair: list = None, 
+        setup: str = 'element name',
+        method: str = 'fGW', 
+        alpha_list: list = None,
+        molecule_sizes: List[int] = None,
+        dataset_name: str = None, # FGG, S1MAW1
+        save: bool = False, # whether to save the results
+        cst_D: float = 0.,
+        ):
+    results = []
+    # Load the molecule pairs from the specified file
+    for i, (nameA, nameB) in enumerate(mol_pair):
+        if setup == 'element name':
+            molA = next(pybel.readfile('xyz', os.path.join(data_path, nameA + '.xyz')))
+            molB = next(pybel.readfile('xyz', os.path.join(data_path, nameB + '.xyz')))
+            X_A, T_A, B_A = otm.tl.process_molecule(molA) 
+            X_B, T_B, B_B = otm.tl.process_molecule(molB)
+        if setup == 'atom type':
+            molA = next(pybel.readfile('xyz', os.path.join(data_path, nameA + '.xyz')))
+            molB = next(pybel.readfile('xyz', os.path.join(data_path, nameB + '.xyz')))
+            X_A, _, B_A = otm.tl.process_molecule(molA) 
+            X_B, _, B_B = otm.tl.process_molecule(molB)  
+            if dataset_name == 'S1MAW1':
+                _, T_A = otm.tl.parse_sy2(os.path.join(data_path, nameA + '_chimera.sy2'))
+                _, T_B = otm.tl.parse_sy2(os.path.join(data_path, nameB + '_chimera.sy2'))
+            else:
+                _, T_A = otm.tl.parse_sy2(os.path.join(data_path, nameA + '.sy2'))
+                _, T_B = otm.tl.parse_sy2(os.path.join(data_path, nameB + '.sy2'))
+        if setup == 'atom connectivity':
+            molA = next(pybel.readfile('xyz', os.path.join(data_path, nameA + '.xyz')))
+            molB = next(pybel.readfile('xyz', os.path.join(data_path, nameB + '.xyz')))
+            X_A, _, B_A = otm.tl.process_molecule(molA) 
+            X_B, _, B_B = otm.tl.process_molecule(molB)
+            T_A = otm.tl.parse_mna(os.path.join(data_path, nameA + '.mna'))
+            T_B = otm.tl.parse_mna(os.path.join(data_path, nameB + '.mna'))
+        if dataset_name == 'FGG':
+            if cst_D == 0.:
+                save_path = f'./otmol_output/{nameB}_to_{nameA}_otmol_{setup.split(" ")[0]}_{setup.split(" ")[1]}_c=0.xyz'
+            if cst_D == 0.5:
+                save_path = f'./otmol_output/{nameB}_to_{nameA}_otmol_{setup.split(" ")[0]}_{setup.split(" ")[1]}_c=0.5.xyz'
+            optimal_assignment, rmsd_best, alpha_best, BCI = otm.tl.molecule_alignment(
+                X_A, X_B, T_A, T_B, B_A, B_B, 
+                method = method, 
+                alpha_list = alpha_list, 
+                molecule_sizes = molecule_sizes, 
+                cst_D = cst_D,
+                minimize_mismatched_edges = False,
+                return_BCI = True,
+                #save_path = save_path
+                )
+                    
+            if not otm.tl.is_permutation(T_A = T_A, T_B = T_B, perm = optimal_assignment, case = 'single'): 
+                print(nameA, nameB, 'Warning: not a proper permutation')
+            results.append({
+                'nameA': nameA,
+                'nameB': nameB,
+                'RMSD(OTMol+{})'.format(setup): rmsd_best,
+                '# atoms': X_A.shape[0],
+                'alpha': alpha_best,
+                'BCI': BCI,
+                'assignment': optimal_assignment,
+                }) 
+            print(i, nameA, nameB, f"{rmsd_best:.2f}", f"{BCI}")
+        if dataset_name == 'S1MAW1':
+            if cst_D == 1:
+                save_path = f'./otmol_output/{nameB}_to_{nameA}_otmol_{setup.split(" ")[0]}_{setup.split(" ")[1]}_c=1.xyz'
+            optimal_assignment, rmsd_best, alpha_best, BCI = otm.tl.molecule_alignment(
+                X_A, X_B, T_A, T_B, B_A, B_B, 
+                method = method, 
+                alpha_list = alpha_list, 
+                molecule_sizes = molecule_sizes, 
+                cst_D = cst_D,
+                minimize_mismatched_edges = True,
+                save_path = save_path
+                )
+            if not otm.tl.is_permutation(T_A = T_A, T_B = T_B, perm = optimal_assignment, case = 'single'): 
+                print(nameA, nameB, 'Warning: not a proper permutation')
+            results.append({
+                'nameA': nameA,
+                'nameB': nameB,
+                'RMSD(OTMol+{})'.format(setup): rmsd_best,
+                '# atoms': X_A.shape[0],
+                'alpha': alpha_best,
+                'BCI': BCI,
+                'assignment': optimal_assignment,
+                }) 
+            print(i, nameA, nameB, f"{rmsd_best:.2f}", f"{BCI}")
+
+    #results_df = pd.DataFrame(results)
+    setup = setup.replace(' ', '_')
+    #if save:
+    #    results_df.to_csv(os.path.join('./otmol_output', f'{dataset_name}_{setup}_{method}_cstD={cst_D:.1f}_results.csv'), index=False)
     return pd.DataFrame(results)
 
 
@@ -227,13 +348,23 @@ def alpha_experiment(
         T_A = otm.tl.parse_mna(os.path.join(data_path, nameA + '.mna'))
         T_B = otm.tl.parse_mna(os.path.join(data_path, nameB + '.mna'))
     for alpha in alpha_list:
-        assignment, rmsd, _ = otm.tl.molecule_alignment(X_A, X_B, T_A, T_B, B_A = B_A, B_B = B_B, method = method, alpha_list = [alpha], cst_D = cst_D)
-        if rmsd > 100:
+        if cst_D == 0.5:
+            save_path = f'./otmol_output/{nameB}_to_{nameA}_otmol_{setup.split(" ")[0]}_{setup.split(" ")[1]}_alpha={alpha:.2f}_c=0.5.xyz'
+        assignment, rmsd, _, BCI = otm.tl.molecule_alignment(
+            X_A, X_B, T_A, T_B, B_A = B_A, B_B = B_B, 
+            method = method, 
+            alpha_list = [alpha], 
+            cst_D = cst_D,
+            minimize_mismatched_edges = True,
+            save_path = save_path
+            )
+        if rmsd is None:
             print(alpha)
             continue
         results.append({
             f'RMSD(OTMol+{setup})': rmsd,
             'alpha': alpha,
+            'BCI': BCI,
             'assignment': assignment,
         }) 
         #print(f"{rmsd:.2f}")
@@ -280,7 +411,9 @@ def n_trial_experiment(
     for n_trials in n_trials_list:
         assignment, rmsd = otm.tl.cluster_alignment(
             X_A, X_B, T_A, T_B, case = 'molecule cluster', 
-            n_atoms = 3, representative_option = 'center', n_trials = n_trials)
+            n_atoms = 3, representative_option = 'center', n_trials = n_trials,
+            save_path = f'./otmol_output/{nameB.split(".")[0]}_to_{nameA.split(".")[0]}_otmol_rep=center_n_trials={n_trials}.xyz'
+            )
         results.append({
             'RMSD(OTMol)': rmsd,
             'n_trials': n_trials,
@@ -297,7 +430,7 @@ def cp_experiment(
         dataset_name: str = None,
         save: bool = False,
         cst_D: float = 0.,
-        count_mismatched_bond: bool = True,
+        minimize_mismatched_edges: bool = True,
         ):
     results = []
     # Load the molecule pairs from the specified file
@@ -306,37 +439,21 @@ def cp_experiment(
         molB = next(pybel.readfile('xyz', os.path.join(data_path, subfolder, nameB)))
         X_A, T_A, B_A = otm.tl.process_molecule(molA) 
         X_B, T_B, B_B = otm.tl.process_molecule(molB)
-        if count_mismatched_bond:
-            optimal_assignment, rmsd_best, alpha_best, mismatched_bond_best = otm.tl.molecule_alignment(X_A, X_B, T_A, T_B, B_A = B_A, B_B = B_B, method = method, alpha_list = alpha_list, cst_D = cst_D, count_mismatched_bond = count_mismatched_bond)
-            if not otm.tl.is_permutation(T_A = T_A, T_B = T_B, perm = optimal_assignment, case = 'single'):
-                print(nameA, nameB, 'Warning: Not a proper assignment')
-            results.append({
-                    'nameA': nameA,
-                    'nameB': nameB,
-                    'RMSD(OTMol)': rmsd_best,
-                    'alpha': alpha_best,
-                    'mismatched_bond': mismatched_bond_best,
-                    'assignment': optimal_assignment,
-                }) 
-            print(nameA, nameB, f"{rmsd_best:.2f}", f"{mismatched_bond_best}")
-        else:
-            optimal_assignment, rmsd_best, alpha_best = otm.tl.molecule_alignment(X_A, X_B, T_A, T_B, B_A = B_A, B_B = B_B, method = method, alpha_list = alpha_list, cst_D = cst_D, count_mismatched_bond = count_mismatched_bond)
-            if not otm.tl.is_permutation(T_A = T_A, T_B = T_B, perm = optimal_assignment, case = 'single'):
-                print(nameA, nameB, 'Warning: Not a proper assignment')
-            results.append({
-                    'nameA': nameA,
-                    'nameB': nameB,
-                    'RMSD(OTMol)': rmsd_best,
-                    'alpha': alpha_best,
-                    'assignment': optimal_assignment,
-                }) 
-            print(nameA, nameB, f"{rmsd_best:.2f}")
-
+        optimal_assignment, rmsd_best, alpha_best, BCI = otm.tl.molecule_alignment(X_A, X_B, T_A, T_B, B_A = B_A, B_B = B_B, method = method, alpha_list = alpha_list, cst_D = cst_D, minimize_mismatched_edges = True)
+        if not otm.tl.is_permutation(T_A = T_A, T_B = T_B, perm = optimal_assignment, case = 'single'):
+            print(nameA, nameB, 'Warning: Not a proper assignment')
+        results.append({
+            'nameA': nameA,
+            'nameB': nameB,
+            'RMSD(OTMol)': rmsd_best,
+            'alpha': alpha_best,
+            'BCI': BCI,
+            'assignment': optimal_assignment,
+        }) 
+        print(nameA, nameB, f"{rmsd_best:.2f}", f"{BCI}")
     results_df = pd.DataFrame(results)
     if save:
         results_df.to_csv(os.path.join('./otmol_output', f'cp_{dataset_name}_{method}_cstD={cst_D:.1f}_results.csv'), index=False)
-    #if save and plain_GW:
-    #    results_df.to_csv(os.path.join('./GW_output', f'cp_{dataset_name}_results.csv'), index=False)
     return results_df
 
 
@@ -495,6 +612,78 @@ def interactive_alignment_plot_py3dmol(
     
     # Show the viewer
     viewer.show()
-    #if save:
-    #    viewer.write_html(f"{nameA}_{nameB}.html")
+
+
+def copy_and_rename_pdb_files():
+    import shutil
+    # Define the base directory
+    base_dir = Path("../data/extra_bio_ligands/extra_bio_ligands_boltz_af3_generated_conformers/AF3_215D_DNA_chainBC")
+    
+    # Get all subdirectories (excluding hidden files and the directory itself)
+    subdirs = [d for d in base_dir.iterdir() if d.is_dir() and not d.name.startswith('.')]
+    
+    print(f"Found {len(subdirs)} subdirectories")
+    
+    copied_count = 0
+    
+    for subdir in subdirs:
+        # Source file path
+        source_file = subdir / "model_chainA_pH74.pdb"
+        
+        # Destination file path (in the main AF3_215D_DNA folder)
+        dest_file = base_dir / f"{subdir.name}_model_chainA_pH74.pdb"
+        
+        # Check if destination file already exists
+        if dest_file.exists():
+            print(f"Warning: {dest_file} already exists, skipping...")
+            continue
+        
+        try:
+            # Copy the file
+            shutil.copy2(source_file, dest_file)
+            print(f"Copied: {source_file} -> {dest_file}")
+            copied_count += 1
+        except Exception as e:
+            print(f"Error copying {source_file}: {e}")
+            skipped_count += 1
+    
+    print(f"\nSummary:")
+    print(f"Files copied: {copied_count}")
+
+
+def get_transformation_matrix(swap, reflect): # added by Xiaoqi
+    """
+    Creates the transformation matrix for a given swap and reflection.
+    swap: tuple of indices (i,j,k) representing how to permute x,y,z
+    reflect: tuple of signs (a,b,c) representing reflections along each axis
+    Returns: 3x3 transformation matrix
+    """
+    matrix = np.zeros((3,3))
+    for i in range(3):
+        matrix[i, swap[i]] = reflect[i]
+    return matrix
+
+
+def find_assignment(X_A, X_B):
+    """
+    Find assignment where assignment[i] is the index of the corresponding row in X_B.
+    
+    Parameters:
+    X_A: numpy array
+    X_B: numpy array (permutation of rows of X_A)
+    
+    Returns:
+    assignment: list where assignment[i] is the index in X_B corresponding to row i in X_A
+    """
+    n = X_A.shape[0]
+    assignment = []
+    
+    for i in range(n):
+        # Find which row in X_B matches row i in X_A
+        for j in range(n):
+            if np.array_equal(X_A[i], X_B[j]):
+                assignment.append(j)
+                break
+    
+    return np.array(assignment, dtype=int)
 

@@ -5,7 +5,7 @@ import pandas as pd
 from ArbAlign_expr import run_arbalign
 
 if __name__ == "__main__":
-   if True:
+   if False:
       data_path = "../Data/first_8_molecules_RDKIT"
       lig_list = [
          '1ln1_DLP', '4csv_imatinib', '5bvs_EIC', '6ln3_ATP', '6y13_stapledHelix', '8w4x_BGC', '8w4x_BGCGLC', '215d_DNA']
@@ -25,6 +25,267 @@ if __name__ == "__main__":
                 'RMSD(ArbAlign)': res,
             })            
          pd.DataFrame(result).to_csv(('./arbalign_output/{}_result.csv'.format(ligand)), index=False)
+   data_path = "../Data/extra_bio_ligands"
+   if False:
+      # 1afo_dimer
+      ligand = '1afo_dimer'
+      result = []
+      path1 = os.path.join(data_path, 'extra_bio_ligands_reference', '1afo_dimer_model1p1_no314OXT_manual.xyz')
+      for i in range(50):
+         path2 = os.path.join(
+               data_path, 
+               'extra_bio_ligands_boltz_af3_generated_conformers', 
+               'boltz_results_1afo_dimer', '1afo_dimer_model_{}.xyz'.format(str(i)))
+         res, swap, reflect = run_arbalign(
+            xyz1_path= path1,
+            xyz2_path= path2,
+            simple=False,  # Set to True for faster but less thorough alignment
+            noHydrogens=True,  # Set to True to ignore hydrogen atoms
+            verbose=False  # Set to True to see detailed output
+         )
+         result.append({
+            'nameA': path1.split('/')[-1].split('.')[0],
+            'nameB': path2.split('/')[-1].split('.')[0],
+            'RMSD(ArbAlign)': res,
+            'swap': swap,
+            'reflect': reflect,
+            })            
+      pd.DataFrame(result).to_csv(('./arbalign_output/{}_results.csv'.format(ligand)), index=False)    
+      # 1afo_single
+      ligand = '1afo_single'
+      result = []
+      path1 = os.path.join(data_path, 'extra_bio_ligands_reference', '1afo_chainB_model1p1_no314OXT_manual.xyz')
+      for i in range(50):
+         path2 = os.path.join(
+               data_path, 
+               'extra_bio_ligands_boltz_af3_generated_conformers', 
+               'boltz_results_1afo_dimer', '1afo_dimer_model_{}_chainB_pH74.xyz'.format(str(i)))
+         res, _, _ = run_arbalign(
+            xyz1_path= path1,
+            xyz2_path= path2,
+            simple=False,  # Set to True for faster but less thorough alignment
+            noHydrogens=True,  # Set to True to ignore hydrogen atoms
+            verbose=False  # Set to True to see detailed output
+         )
+         result.append({
+            'nameA': path1.split('/')[-1].split('.')[0],
+            'nameB': path2.split('/')[-1].split('.')[0],
+            'RMSD(ArbAlign)': res,
+            })            
+      pd.DataFrame(result).to_csv(('./arbalign_output/{}_results.csv'.format(ligand)), index=False)   
+   if True:
+      # 1ln1_DLP
+      ligand = '1ln1_DLP'
+      result = []
+      path1 = os.path.join(data_path, 'extra_bio_ligands_reference', '1ln1_DLP.xyz')
+      for i in range(50):
+         path2 = os.path.join(
+            data_path, 
+            'extra_bio_ligands_boltz_af3_generated_conformers', 
+            'boltz_results_{}'.format(ligand), 
+            '1ln1_DLP_model_{}_chainB_pH74.xyz'.format(str(i))
+         )
+         res, swap, reflect = run_arbalign(
+            xyz1_path= path1,
+            xyz2_path= path2,
+            simple=False,  # Set to True for faster but less thorough alignment
+            noHydrogens=True,  # Set to True to ignore hydrogen atoms
+            verbose=False  # Set to True to see detailed output
+         )
+         result.append({
+            'nameA': path1.split('/')[-1].split('.')[0],
+            'nameB': path2.split('/')[-1].split('.')[0],
+            'RMSD(ArbAlign)': res,
+            'swap': swap,
+            'reflect': reflect,
+            })            
+      pd.DataFrame(result).to_csv(('./arbalign_output/{}_results.csv'.format(ligand)), index=False)   
 
+      # 4csv_imatinib
+      ligand = '4csv_imatinib'
+      result = []
+      path1 = os.path.join(data_path, 'extra_bio_ligands_reference', '4csv_imatinib.xyz')
+      for i in range(50):
+         path2 = os.path.join(
+               data_path, 
+               'extra_bio_ligands_boltz_af3_generated_conformers', 
+               'boltz_results_{}'.format(ligand), '4csv_imatinib_model_{}_chainB_pH74.xyz'.format(str(i)))
+         res, swap, reflect = run_arbalign(
+            xyz1_path= path1,
+            xyz2_path= path2, 
+            simple=False,  # Set to True for faster but less thorough alignment
+            noHydrogens=True,  # Set to True to ignore hydrogen atoms
+            verbose=False  # Set to True to see detailed output
+         )
+         result.append({
+            'nameA': path1.split('/')[-1].split('.')[0],
+            'nameB': path2.split('/')[-1].split('.')[0],
+            'RMSD(ArbAlign)': res,
+            'swap': swap,
+            'reflect': reflect,
+            })     
+         
+      path2 = os.path.join(
+         data_path, 
+         'extra_bio_ligands_CSD', 
+         'CSD_AJIGUZ_imatinib_manual.xyz')
+      res, swap, reflect = run_arbalign(
+         xyz1_path= path1,
+         xyz2_path= path2, 
+         simple=False,  # Set to True for faster but less thorough alignment
+         noHydrogens=True,  # Set to True to ignore hydrogen atoms
+         verbose=False  # Set to True to see detailed output
+      )       
+      result.append({
+         'nameA': path1.split('/')[-1].split('.')[0],
+         'nameB': path2.split('/')[-1].split('.')[0],
+         'RMSD(ArbAlign)': res,
+         'swap': swap,
+         'reflect': reflect,
+      }) 
+      pd.DataFrame(result).to_csv(('./arbalign_output/{}_results.csv'.format(ligand)), index=False)
 
-      
+      # 5bvs_EIC
+      ligand = '5bvs_EIC'
+      result = []
+      path1 = os.path.join(data_path, 'extra_bio_ligands_reference', '5bvs_EIC.xyz')
+      for i in range(50):
+         path2 = os.path.join(
+               data_path, 
+               'extra_bio_ligands_boltz_af3_generated_conformers', 
+               'boltz_results_{}'.format(ligand), '5bvs_EIC_model_{}_chainB_pH74.xyz'.format(str(i)))
+         res, swap, reflect = run_arbalign(
+            xyz1_path= path1,
+            xyz2_path= path2,
+            simple=False,  # Set to True for faster but less thorough alignment
+            noHydrogens=True,  # Set to True to ignore hydrogen atoms
+            verbose=False  # Set to True to see detailed output
+         )
+         result.append({
+            'nameA': path1.split('/')[-1].split('.')[0],
+            'nameB': path2.split('/')[-1].split('.')[0],
+            'RMSD(ArbAlign)': res,
+            'swap': swap,
+            'reflect': reflect,
+            })            
+      pd.DataFrame(result).to_csv(('./arbalign_output/{}_results.csv'.format(ligand)), index=False)   
+
+      # 6ln3_ATP
+      ligand = '6ln3_ATP'
+      result = []
+      path1 = os.path.join(data_path, 'extra_bio_ligands_reference', '6ln3_ATP.xyz')
+      for i in range(50):
+         path2 = os.path.join(
+               data_path, 
+               'extra_bio_ligands_boltz_af3_generated_conformers', 
+               'boltz_results_{}'.format(ligand), '6ln3_ATP_model_{}_chainB_pH74.xyz'.format(str(i)))
+         res, swap, reflect = run_arbalign(
+            xyz1_path= path1,
+            xyz2_path= path2, 
+            simple=False,  # Set to True for faster but less thorough alignment
+            noHydrogens=True,  # Set to True to ignore hydrogen atoms
+            verbose=False  # Set to True to see detailed output
+         )
+         result.append({
+            'nameA': path1.split('/')[-1].split('.')[0],
+            'nameB': path2.split('/')[-1].split('.')[0],
+            'RMSD(ArbAlign)': res,
+            'swap': swap,
+            'reflect': reflect,
+            })     
+         
+      path2 = os.path.join(
+         data_path, 
+         'extra_bio_ligands_CSD', 
+         'CSD_GAYLOH_ATP_manual.xyz')
+      res, swap, reflect = run_arbalign(
+         xyz1_path= path1,
+         xyz2_path= path2, 
+         simple=False,  # Set to True for faster but less thorough alignment
+         noHydrogens=True,  # Set to True to ignore hydrogen atoms
+         verbose=False  # Set to True to see detailed output
+      )       
+      result.append({
+         'nameA': path1.split('/')[-1].split('.')[0],
+         'nameB': path2.split('/')[-1].split('.')[0],
+         'RMSD(ArbAlign)': res,
+         'swap': swap,
+         'reflect': reflect,
+      }) 
+      pd.DataFrame(result).to_csv(('./arbalign_output/{}_results.csv'.format(ligand)), index=False)
+
+      # 8w4x_BGC
+      ligand = '8w4x_BGC'
+      result = []
+      path1 = os.path.join(data_path, 'extra_bio_ligands_reference', '8w4x_BGC.xyz')
+      for i in range(50):
+         path2 = os.path.join(
+               data_path, 
+               'extra_bio_ligands_boltz_af3_generated_conformers', 
+               'boltz_results_8w4x_sugars', '8w4x_sugars_model_{}_chainB_pH74.xyz'.format(str(i)))
+         res, swap, reflect = run_arbalign(
+            xyz1_path= path1,
+            xyz2_path= path2,
+            simple=False,  # Set to True for faster but less thorough alignment
+            noHydrogens=True,  # Set to True to ignore hydrogen atoms
+            verbose=False  # Set to True to see detailed output
+         )
+         result.append({
+            'nameA': path1.split('/')[-1].split('.')[0],
+            'nameB': path2.split('/')[-1].split('.')[0],
+            'RMSD(ArbAlign)': res,
+            'swap': swap,
+            'reflect': reflect,
+            })            
+      pd.DataFrame(result).to_csv(('./arbalign_output/{}_results.csv'.format(ligand)), index=False)   
+
+      # 8w4x_BGCGLC
+      ligand = '8w4x_BGCGLC'
+      result = []
+      path1 = os.path.join(data_path, 'extra_bio_ligands_reference', '8w4x_BGCGLC.xyz')
+      for i in range(50):
+         path2 = os.path.join(
+               data_path, 
+               'extra_bio_ligands_boltz_af3_generated_conformers', 
+               'boltz_results_8w4x_sugars', '8w4x_sugars_model_{}_chainC_pH74.xyz'.format(str(i)))
+         res, swap, reflect = run_arbalign(
+            xyz1_path= path1,
+            xyz2_path= path2,
+            simple=False,  # Set to True for faster but less thorough alignment
+            noHydrogens=True,  # Set to True to ignore hydrogen atoms
+            verbose=False  # Set to True to see detailed output
+         )
+         result.append({
+            'nameA': path1.split('/')[-1].split('.')[0],
+            'nameB': path2.split('/')[-1].split('.')[0],
+            'RMSD(ArbAlign)': res,
+            'swap': swap,
+            'reflect': reflect,
+            })            
+      pd.DataFrame(result).to_csv(('./arbalign_output/{}_results.csv'.format(ligand)), index=False)  
+   if True:
+      # 215d_DNA
+      ligand = '215d_DNA'
+      result = []
+      path1 = os.path.join(data_path, 'extra_bio_ligands_reference', '215d_DNA_manual.xyz')
+      for i in range(1, 11):
+         for j in range(5):
+            path2 = os.path.join(
+               data_path, 
+               'extra_bio_ligands_boltz_af3_generated_conformers', 
+               'AF3_215D_DNA_chainBC', 'seed-{}_sample-{}_model_chainA_pH74.xyz'.format(str(i), str(j)))
+            res, swap, reflect = run_arbalign(
+               xyz1_path= path1,
+               xyz2_path= path2,
+               simple=False,  # Set to True for faster but less thorough alignment
+               noHydrogens=True,  # Set to True to ignore hydrogen atoms
+               verbose=False  # Set to True to see detailed output
+               )
+            result.append({
+               'nameA': path1.split('/')[-1].split('.')[0],
+               'nameB': path2.split('/')[-1].split('.')[0],
+               'RMSD(ArbAlign)': res,
+               'swap': swap,
+               'reflect': reflect,
+            })            
+      pd.DataFrame(result).to_csv(('./arbalign_output/{}_results.csv'.format(ligand)), index=False)  

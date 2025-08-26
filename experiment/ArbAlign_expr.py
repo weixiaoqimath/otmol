@@ -715,7 +715,7 @@ if __name__ == "__main__":
          })
       pd.DataFrame(result).to_csv(('./arbalign_output/cp_largest_arbalign_result.csv'), index=False)
          
-   if True:
+   if False:
       result = []
       data_path = "../Data/FGG-Tripeptide"
       mol_pair_list_path = os.path.join(data_path, 'list')
@@ -757,7 +757,7 @@ if __name__ == "__main__":
       pd.DataFrame(result).to_csv(('./arbalign_output/FGG_result.csv'), index=False)
       
 
-   if True:
+   if False:
       result = []
       data_path = "../Data/S1-MA-W1"
       mol_pair_list_path = os.path.join(data_path, 'list')
@@ -822,7 +822,7 @@ if __name__ == "__main__":
          })
       pd.DataFrame(result).to_csv(('./arbalign_output/ArbAlignDataWC_result.csv'), index=False)
    
-   if False:
+   if True:
       result = []
       group1_data_path = "../Data/Our_Benchmark_20250410_ver1/Water_Cluster_3_30/water_xyz_output_1st_2nd"
       group1_info = pd.read_csv('../Data/Our_Benchmark_20250410_ver1/Water_Cluster_3_30/water_cluster_1st_2nd_lowest_energy.csv')

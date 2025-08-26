@@ -198,6 +198,8 @@ def interactive_alignment_plot(
     nameB: str = 'B', 
     save: bool = False,
     show_labels: bool = True,
+    show_atom_indices: bool = False,
+    only_A_bonds: bool = False,
     ) -> None:
     """Plot the alignment of two structures in 3D in an interactive plot.
 
@@ -224,6 +226,8 @@ def interactive_alignment_plot(
         The name of structure B.
     save : bool, optional
         Whether to save the figure as an HTML file.
+    only_A_bonds: bool, optional
+        If True, plot the bonds in A that are not in B in orange.
     """
     fig = go.Figure()
     # Add scatter points for structure A with different sizes for different atoms
@@ -231,8 +235,8 @@ def interactive_alignment_plot(
         x=X_A[:, 0],
         y=X_A[:, 1],
         z=X_A[:, 2],
-        mode='markers+text' if show_labels else 'markers',  # Add text mode
-        text=T_A if show_labels else None,  # Add element labels
+        mode='markers+text' if show_labels or show_atom_indices else 'markers',  # Add text mode
+        text=T_A if show_labels else [str(i) for i in range(len(X_A))] if show_atom_indices else None,  # Add element labels
         textposition="top center",  # Position the text above the points
         marker=dict(
             size=[ATOMIC_SIZE[label]*20 for label in T_A], 
@@ -247,8 +251,8 @@ def interactive_alignment_plot(
         x=X_B[:, 0],
         y=X_B[:, 1],
         z=X_B[:, 2],
-        mode='markers+text' if show_labels else 'markers',  # Add text mode
-        text=T_B if show_labels else None,  # Add element labels
+        mode='markers+text' if show_labels or show_atom_indices else 'markers',  # Add text mode
+        text=T_B if show_labels else [str(i) for i in range(len(X_B))] if show_atom_indices else None,  # Add element labels
         textposition="top center",  # Position the text above the points
         marker=dict(
             size=[ATOMIC_SIZE[label]*20 for label in T_B], 
@@ -312,32 +316,58 @@ def interactive_alignment_plot(
     if True:
         #bonding_info_A = [B_A[i, j] for i in range(len(X_A)) for j in range(len(X_A)) if i < j]
         #bonding_info_B = [B_B[assignment[i], assignment[j]] for i in range(len(X_A)) for j in range(len(X_A)) if i < j]
-        for i in range(len(X_A)):
-            for j in range(len(X_A)):
-                if i < j and B_A[i,j] != B_B[assignment[i],assignment[j]]:
-                    fig.add_trace(go.Scatter3d(
-                        x=[X_A[i,0], X_A[j,0]],
-                        y=[X_A[i,1], X_A[j,1]],
-                        z=[X_A[i,2], X_A[j,2]],
-                        mode='lines',
-                        line=dict(
-                            color='orange',
-                            width=2
-                        ),
-                        showlegend=False
-                    ))
-                    fig.add_trace(go.Scatter3d(
-                        x=[X_B[assignment[i],0], X_B[assignment[j],0]],
-                        y=[X_B[assignment[i],1], X_B[assignment[j],1]],
-                        z=[X_B[assignment[i],2], X_B[assignment[j],2]],
-                        mode='lines',
-                        line=dict(
-                            color='orange',
-                            width=2
-                        ),
-                        showlegend=False
-                    ))
-
+        if not only_A_bonds:
+            for i in range(len(X_A)):
+                for j in range(len(X_A)):
+                    if i < j and B_A[i,j] != B_B[assignment[i],assignment[j]]:
+                        fig.add_trace(go.Scatter3d(
+                            x=[X_A[i,0], X_A[j,0]],
+                            y=[X_A[i,1], X_A[j,1]],
+                            z=[X_A[i,2], X_A[j,2]],
+                            mode='lines',
+                            line=dict(
+                                color='orange',
+                                width=2
+                            ),
+                            showlegend=False
+                        ))
+                        fig.add_trace(go.Scatter3d(
+                            x=[X_B[assignment[i],0], X_B[assignment[j],0]],
+                            y=[X_B[assignment[i],1], X_B[assignment[j],1]],
+                            z=[X_B[assignment[i],2], X_B[assignment[j],2]],
+                            mode='lines',
+                            line=dict(
+                                color='orange',
+                                width=2
+                            ),
+                            showlegend=False
+                        ))
+        if only_A_bonds:
+            for i in range(len(X_A)):
+                for j in range(len(X_A)):
+                    if i < j and B_A[i,j] == 1 and B_B[assignment[i],assignment[j]] == 0:
+                        fig.add_trace(go.Scatter3d(
+                            x=[X_A[i,0], X_A[j,0]],
+                            y=[X_A[i,1], X_A[j,1]],
+                            z=[X_A[i,2], X_A[j,2]],
+                            mode='lines',
+                            line=dict(
+                                color='orange',
+                                width=2
+                            ),
+                            showlegend=False
+                        ))
+                        fig.add_trace(go.Scatter3d(
+                            x=[X_B[assignment[i],0], X_B[assignment[j],0]],
+                            y=[X_B[assignment[i],1], X_B[assignment[j],1]],
+                            z=[X_B[assignment[i],2], X_B[assignment[j],2]],
+                            mode='lines',
+                            line=dict(
+                                color='orange',
+                                width=2
+                            ),
+                            showlegend=False
+                        ))
     # Update layout
     fig.update_layout(
         title='{} {} Alignment'.format(nameA, nameB),

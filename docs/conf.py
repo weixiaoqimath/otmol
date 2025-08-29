@@ -19,8 +19,7 @@ from pathlib import Path
 
 HERE = Path(__file__).parent
 sys.path[:0] = [str(HERE.parent)]
-# sys.path.append(os.path.abspath('..'))
-import otmol
+#import otmol
 
 # -- Project information -----------------------------------------------------
 

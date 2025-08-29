@@ -4,23 +4,14 @@ Molecular alignment with optimal transport
 
 ## Installation
 
-OTMol depends on the following packages:
-
-- numpy >= 1.20.0
-- scipy >= 1.7.0
-- matplotlib >= 3.4.0
-- pandas >= 1.3.0
-- pot >= 0.9.5
-- networkx >= 3.1
-- plotly >= 5.15.0
-
-OTMol has been tested in python 3.9 virtual environment.
 
 ```
 git clone https://github.com/weixiaoqimath/otmol.git
 cd otmol
+conda env create -f environment.yml
 pip install .
 ```
+OTMol has been tested in python 3.9 virtual environment.
 
 ## Usage
 

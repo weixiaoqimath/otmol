@@ -32,7 +32,7 @@ import otmol
 
 # -- Project information -----------------------------------------------------
 
-project = 'OTMol'
+project = 'otmol'
 copyright = '2025, Xiaoqi Wei, Xuhang Dai, Zixuan Cang'
 author = 'Xiaoqi Wei, Xuhang Dai, Zixuan Cang'
 

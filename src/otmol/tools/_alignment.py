@@ -28,7 +28,7 @@ def molecule_alignment(
         save_path: str = None,
         return_BCI: bool = False,
         ) -> Tuple[np.ndarray, float, float]:
-    """Compute optimal transport and alignment between molecules.
+    """Compute alignment between two molecules or (molecular complexes) with optimal transport.
 
     Parameters
     ----------
@@ -43,28 +43,32 @@ def molecule_alignment(
     method : list of str
         Optimal transport method to use, by default ['fgw', 'emd'].
     alpha_list : list
-        List of alpha values to try for fGW or fsGW, by default None.
+        List of alpha values to try for fGW or fsGW solver, by default None.
     molecule_sizes : List[int], optional
         Sizes of molecules, by default None.
     reflection : bool, optional
-        Whether to allow reflection in the alignment, by default False.
+        Whether to allow reflection in the Kabsch algorithm, by default False.
     cst_D : float, optional
-        Regularization parameter for distance matrix, by default 0..
+        D = (1-cst_D)*Euclidean + cst_D*Geodesic, by default 0. If the user wants to reduce bond inconsistency, set cst_D to a value close to 1.
     minimize_mismatched_edges : bool, optional
-        Whether to minimize mismatched edges in the alignment, by default False.
+        Whether to prioritize minimizing mismatched edges in the alignment, by default False.
+    save_path : str, optional
+        Path to save the aligned molecule, by default None. The atoms in the aligned molecule will be reordered.
     return_BCI: bool, optional
         Whether to return the BCI value, by default False. Only use when minimize_mismatched_edges is False.
-    save_path : str, optional
-        Path to save the aligned molecule, by default None.
 
     Returns
     -------
-    numpy.ndarray
+    assignment : numpy.ndarray
         Optimal assignment between molecules.
-    float
+    rmsd : float
         Best RMSD value.
-    float
+    alpha : float
         Best alpha value.
+    BCI : float
+        BCI value. If minimize_mismatched_edges or return_BCI is True, the BCI value will be returned.
+        A mismatched edge is an edge that is present in A but not in B.
+        BCI is defined as the number of mismatched edges divided by the total number of edges in A.
     """
     if molecule_sizes is not None:
         T_B_original = T_B.copy()
@@ -168,107 +172,6 @@ def molecule_alignment(
             return assignment_best, rmsd_best, alpha_best, BCI
         else:
             return assignment_best, rmsd_best, alpha_best
-    
-
-def molecule_alignment_with_perturbation(
-        X_A, 
-        X_B, 
-        T_A, 
-        T_B, 
-        B_A: np.ndarray = None,
-        B_B: np.ndarray = None,
-        alpha_list: list = np.arange(0,1,0.1)[1:], 
-        molecule_sizes: List[int] = None,
-        reflection: bool = False,
-        scale: float = 0.1,
-        #cst_D: float = 0.,
-        n_perturbation: int = 30,
-        ) -> Tuple[np.ndarray, float, float]:
-    """Compute optimal transport and alignment between molecules.
-
-    Parameters
-    ----------
-    X_A : numpy.ndarray
-        Coordinates of molecule A.
-    X_B : numpy.ndarray
-        Coordinates of molecule B.
-    T_A : array_like
-        Atom labels of molecule A.
-    T_B : array_like
-        Atom labels of molecule B.
-    method : list of str
-        Optimal transport method to use, by default ['fgw', 'emd'].
-    alpha_list : list
-        List of alpha values to try for fGW or fsGW, by default None.
-    molecule_sizes : List[int], optional
-        Sizes of molecules, by default None.
-    reg : float, optional
-        Regularization parameter for sinkhorn, by default 1e-2.
-
-    Returns
-    -------
-    numpy.ndarray
-        Optimal assignment between molecules.
-    float
-        Best RMSD value.
-    float
-        Best alpha value.
-    """
-    if molecule_sizes is not None:
-        T_A, T_B = add_molecule_indices(T_A, T_B, molecule_sizes)
-    C = cost_matrix(T_A = T_A, T_B = T_B, k = np.inf)
-
-    C_finite = C.copy()
-    C_finite[C_finite == np.inf] = 1e12
-    D_A = geodesic_distance(X_A, B_A)
-    D_B = geodesic_distance(X_B, B_B)
-    D_A, D_B = D_A/D_A.max(), D_B/D_A.max()
-    rmsd_best = 1e10
-    mismatched_bond_best = 1e10
-    assignment_list = []
-    assignment_set = set()
-    assignment_best = None
-    alpha_best = None
-    for alpha in alpha_list:
-        P = ot.gromov.fused_gromov_wasserstein(C_finite, D_A, D_B, alpha=alpha, symmetric=True)
-        assignment = np.argmax(P, axis=1)
-        if is_permutation(T_A=T_A, T_B=T_B, perm=assignment, case='single') and tuple(assignment) not in assignment_set:
-            assignment_list.append(assignment)
-            assignment_set.add(tuple(assignment))
-
-    for i in range(n_perturbation):
-        X_A_perturbed = add_perturbation(X = X_A, noise_scale = scale, random_state = i) 
-        X_B_perturbed = add_perturbation(X = X_B, noise_scale = scale, random_state = i) 
-        D_A_perturbed = geodesic_distance(X_A_perturbed, B_A)
-        D_B_perturbed = geodesic_distance(X_B_perturbed, B_B)
-        D_A_perturbed, D_B_perturbed = D_A_perturbed/D_A_perturbed.max(), D_B_perturbed/D_A_perturbed.max() 
-        for j in alpha_list:
-            P = ot.gromov.fused_gromov_wasserstein(C, D_A_perturbed, D_B_perturbed, alpha = j, symmetric=True)
-            assignment = np.argmax(P, axis=1)
-            if is_permutation(T_A, T_B, assignment, case='single') and tuple(assignment) not in assignment_set:
-                assignment_list.append(assignment)  
-                assignment_set.add(tuple(assignment))
-
-    n = len(T_A)
-    for assignment in assignment_list:
-        mismatched_bond = mismatched_bond_counter(B_A, B_B, assignment, n, n)
-        if mismatched_bond < mismatched_bond_best:
-            rmsd_best = 1e10 # reset rmsd_best
-            mismatched_bond_best = mismatched_bond
-            X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(assignment), reflection)
-            rmsd = root_mean_square_deviation(X_A, X_B_aligned[assignment])
-            if rmsd < rmsd_best:
-                rmsd_best = rmsd
-                assignment_best = assignment
-        if mismatched_bond == mismatched_bond_best:
-            X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(assignment), reflection)
-            rmsd = root_mean_square_deviation(X_A, X_B_aligned[assignment])
-            if rmsd < rmsd_best:
-                rmsd_best = rmsd
-                assignment_best = assignment              
-    if assignment_best is None:
-         print('No valid assignment found') 
-    return assignment_best, rmsd_best, alpha_best, mismatched_bond_best
 
 
 def cluster_alignment(
@@ -287,7 +190,7 @@ def cluster_alignment(
         reflection: bool = False,
         save_path: str = None,
         ):
-    """Compute optimal transport and alignment between clusters.
+    """Compute alignment between two clusters with optimal transport.
 
     Parameters
     ----------
@@ -304,23 +207,24 @@ def cluster_alignment(
     p_list : list, optional
         Only used when case is 'same element'. List of power values for distance matrix, by default None.
     case : str
-        Case type ('same element' or 'molecule cluster'), by default 'same element'.
+        Cluster type ('same element' or 'molecule cluster'), by default 'same element'.
     reg : float, optional
         Regularization parameter for sinkhorn and sOT, by default 1e-2.
     numItermax : int, optional
         Maximum number of iterations for sinkhorn and sOT, by default 1000.
     n_atoms : int, optional
         Number of atoms in a molecule in a molecule cluster, by default None.
-    molecule_cluster_options : str, optional
-        Options for molecule cluster, by default 'center'.
+    representative_option : str, optional
+        The representative coordinate for a molecule in a molecule cluster, by default 'center'.
+        For water clusters, one may choose "O" (oxygen).
 
     Returns
     -------
-    numpy.ndarray
+    assignment : numpy.ndarray
         Optimal assignment between clusters.
-    float
+    rmsd : float
         Best RMSD value.
-    float
+    p : float
         Best p value (for 'same element' case).
     """
     rmsd_best = 1e10
@@ -439,30 +343,28 @@ def kabsch(
     reflection: bool = False
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Kabsch algorithm. 
-    Perform rigid body rotation (including reflection if reflection is True), 
+    Perform rigid body rotation (including reflection if reflection is set to True), 
     and translation to align molecules.
-    When there is no need to worry about chirality 
-    (e.g. two molecules have the same chirality), reflection is allowed.
 
     Parameters
     ----------
     X1 : numpy.ndarray
-        Coordinates of molecule 1 (template) as an n x 3 array.
+        Coordinates of molecule 1 (reference) as an n x 3 array.
     X2 : numpy.ndarray
         Coordinates of molecule 2 (to be aligned) as an m x 3 array.
     P : numpy.ndarray
         A transport plan describing the correspondence between molecules. 
-        In the study of isomers, it should be a permutation matrix.
+        It should be a permutation matrix.
     reflection : bool, optional
-        Whether to allow reflection, by default True. 
+        Whether to allow reflection, by default False. 
 
     Returns
     -------
-    numpy.ndarray
+    X2_aligned : numpy.ndarray
         Aligned coordinates of molecule 2.
-    numpy.ndarray
+    R : numpy.ndarray
         Rotation matrix.
-    numpy.ndarray
+    t : numpy.ndarray
         Translation vector.
     """
     total_weight = P.sum()
@@ -528,7 +430,7 @@ def perturbation_before_gw(
 
     Returns
     -------
-    List[numpy.ndarray]
+    list_perms : List[numpy.ndarray]
         List of permutations.
     """
     unique_perms = set()
@@ -563,4 +465,103 @@ def perturbation_before_gw(
     return list_perms
 
 
+#def molecule_alignment_with_perturbation(
+#        X_A, 
+#        X_B, 
+#        T_A, 
+#        T_B, 
+#        B_A: np.ndarray = None,
+#        B_B: np.ndarray = None,
+#        alpha_list: list = np.arange(0,1,0.1)[1:], 
+#        molecule_sizes: List[int] = None,
+#        reflection: bool = False,
+#        scale: float = 0.1,
+#        #cst_D: float = 0.,
+#        n_perturbation: int = 30,
+#        ) -> Tuple[np.ndarray, float, float]:
+#    """Compute optimal transport and alignment between molecules.
+
+#    Parameters
+#    ----------
+#    X_A : numpy.ndarray
+#        Coordinates of molecule A.
+#    X_B : numpy.ndarray
+#        Coordinates of molecule B.
+#    T_A : array_like
+#        Atom labels of molecule A.
+#    T_B : array_like
+#        Atom labels of molecule B.
+#    method : list of str
+#        Optimal transport method to use, by default ['fgw', 'emd'].
+#    alpha_list : list
+#        List of alpha values to try for fGW or fsGW, by default None.
+#    molecule_sizes : List[int], optional
+#        Sizes of molecules, by default None.
+#    reg : float, optional
+#        Regularization parameter for sinkhorn, by default 1e-2.
+
+#    Returns
+#    -------
+#    numpy.ndarray
+#        Optimal assignment between molecules.
+#    float
+#        Best RMSD value.
+#    float
+#        Best alpha value.
+#    """
+#    if molecule_sizes is not None:
+#        T_A, T_B = add_molecule_indices(T_A, T_B, molecule_sizes)
+#    C = cost_matrix(T_A = T_A, T_B = T_B, k = np.inf)
+
+#    C_finite = C.copy()
+#    C_finite[C_finite == np.inf] = 1e12
+#    D_A = geodesic_distance(X_A, B_A)
+#    D_B = geodesic_distance(X_B, B_B)
+#    D_A, D_B = D_A/D_A.max(), D_B/D_A.max()
+#    rmsd_best = 1e10
+#    mismatched_bond_best = 1e10
+#    assignment_list = []
+#    assignment_set = set()
+#    assignment_best = None
+#    alpha_best = None
+#    for alpha in alpha_list:
+#        P = ot.gromov.fused_gromov_wasserstein(C_finite, D_A, D_B, alpha=alpha, symmetric=True)
+#        assignment = np.argmax(P, axis=1)
+#        if is_permutation(T_A=T_A, T_B=T_B, perm=assignment, case='single') and tuple(assignment) not in assignment_set:
+#            assignment_list.append(assignment)
+#            assignment_set.add(tuple(assignment))
+
+#    for i in range(n_perturbation):
+#        X_A_perturbed = add_perturbation(X = X_A, noise_scale = scale, random_state = i) 
+#        X_B_perturbed = add_perturbation(X = X_B, noise_scale = scale, random_state = i) 
+#        D_A_perturbed = geodesic_distance(X_A_perturbed, B_A)
+#        D_B_perturbed = geodesic_distance(X_B_perturbed, B_B)
+#        D_A_perturbed, D_B_perturbed = D_A_perturbed/D_A_perturbed.max(), D_B_perturbed/D_A_perturbed.max() 
+#        for j in alpha_list:
+#            P = ot.gromov.fused_gromov_wasserstein(C, D_A_perturbed, D_B_perturbed, alpha = j, symmetric=True)
+#            assignment = np.argmax(P, axis=1)
+#            if is_permutation(T_A, T_B, assignment, case='single') and tuple(assignment) not in assignment_set:
+#                assignment_list.append(assignment)  
+#                assignment_set.add(tuple(assignment))
+
+#    n = len(T_A)
+#    for assignment in assignment_list:
+#        mismatched_bond = mismatched_bond_counter(B_A, B_B, assignment, n, n)
+#        if mismatched_bond < mismatched_bond_best:
+#            rmsd_best = 1e10 # reset rmsd_best
+#            mismatched_bond_best = mismatched_bond
+#            X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(assignment), reflection)
+#            rmsd = root_mean_square_deviation(X_A, X_B_aligned[assignment])
+#            if rmsd < rmsd_best:
+#                rmsd_best = rmsd
+#                assignment_best = assignment
+#        if mismatched_bond == mismatched_bond_best:
+#            X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(assignment), reflection)
+#            rmsd = root_mean_square_deviation(X_A, X_B_aligned[assignment])
+#            if rmsd < rmsd_best:
+#                rmsd_best = rmsd
+#                assignment_best = assignment              
+#    if assignment_best is None:
+#         print('No valid assignment found') 
+#    return assignment_best, rmsd_best, alpha_best, mismatched_bond_best
 

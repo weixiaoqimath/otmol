@@ -1,4 +1,4 @@
-# Xiaoqi:We changed the hungarian algorithm to EMD.
+# Xiaoqi: We changed the hungarian algorithm to EMD.
 # this scripts requires python 2.7
 import os
 import sys

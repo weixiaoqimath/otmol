@@ -226,6 +226,10 @@ def interactive_alignment_plot(
         The name of structure B.
     save : bool, optional
         Whether to save the figure as an HTML file.
+    show_labels: bool, optional
+        Whether to show the labels of the atoms.
+    show_atom_indices: bool, optional
+        Whether to show the indices of the atoms.
     only_A_bonds: bool, optional
         If True, plot the bonds in A that are not in B in orange.
     """

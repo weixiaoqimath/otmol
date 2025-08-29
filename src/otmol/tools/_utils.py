@@ -421,6 +421,28 @@ def mismatched_bond_counter(B_A, B_B, assignment, n, m, only_A_bonds=False):
     """
     Count the number of mismatched bonds between two sets of bonds.
     If only_A_bonds is True, only count the number of bonds in A that are not in B.
+
+    Parameters
+    ----------
+    B_A : numpy.ndarray
+        Array of shape (n, n) containing the bond information for molecule A.
+    B_B : numpy.ndarray
+        Array of shape (m, m) containing the bond information for molecule B.
+    assignment : numpy.ndarray
+        Array of shape (n,) containing the assignment of atoms in B to atoms in A.
+    n : int
+        The number of atoms in molecule A.
+    m : int
+        The number of atoms in molecule B.
+    only_A_bonds : bool, optional
+        If True, only count the number of bonds in A that are not in B.
+
+    Returns
+    -------
+    int
+        The number of mismatched bonds.
+    list
+        When only_A_bonds is True, a list of tuples, where each tuple contains the indices of the mismatched bonds.
     """
     i, j = np.triu_indices(n, k=1)  # k=1 to exclude diagonal
     # Create assignment matrix        

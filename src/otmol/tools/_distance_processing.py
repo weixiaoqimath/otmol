@@ -1,5 +1,5 @@
 import numpy as np
-from openbabel import openbabel
+#from openbabel import openbabel
 from scipy.spatial import distance_matrix
 from scipy.sparse import csr_array
 from scipy.sparse.csgraph import floyd_warshall
@@ -58,7 +58,19 @@ def geodesic_distance(
     B
 ):
     """
-    B: adjacency matrix of the graph
+    return the geodesic distance between all pairs of atoms in the molecule.
+
+    Parameters
+    ----------
+    X: numpy.ndarray
+        Coordinates of the molecule.
+    B: numpy.ndarray
+        Adjacency matrix of the graph.
+
+    Returns
+    -------
+    numpy.ndarray
+        Geodesic distance between all pairs of atoms in the molecule.
     """
     dists = distance_matrix(X, X)   
     graph = np.where(B, dists, 0)
@@ -67,51 +79,51 @@ def geodesic_distance(
     return geodesic
 
 
-def atom_physchem_distance(atomic_type1: str, atomic_type2: str) -> float:
-    """
-    Computes normalized Euclidean distance between two atomic numbers using:
-    - Electronegativity (en)
-    - Van der Waals radius (vdw)
-    - Covalent radius (cov)
-    """
-    if atomic_type1 not in ATOMIC_PROPERTIES or atomic_type2 not in ATOMIC_PROPERTIES:
-        raise ValueError(f"Unsupported atomic type(s). Supported: {list(ATOMIC_PROPERTIES.keys())}")
+#def atom_physchem_distance(atomic_type1: str, atomic_type2: str) -> float:
+#    """
+#    Computes normalized Euclidean distance between two atomic numbers using:
+#    - Electronegativity (en)
+#    - Van der Waals radius (vdw)
+#    - Covalent radius (cov)
+#    """
+#    if atomic_type1 not in ATOMIC_PROPERTIES or atomic_type2 not in ATOMIC_PROPERTIES:
+#        raise ValueError(f"Unsupported atomic type(s). Supported: {list(ATOMIC_PROPERTIES.keys())}")
 
-    p1 = ATOMIC_PROPERTIES[atomic_type1]
-    p2 = ATOMIC_PROPERTIES[atomic_type2]
+#    p1 = ATOMIC_PROPERTIES[atomic_type1]
+#    p2 = ATOMIC_PROPERTIES[atomic_type2]
 
     # Get normalization ranges from the 9 elements
-    en_values = [v["en"] for v in ATOMIC_PROPERTIES.values()]
-    vdw_values = [v["vdw"] for v in ATOMIC_PROPERTIES.values()]
-    cov_values = [v["cov"] for v in ATOMIC_PROPERTIES.values()]
+#    en_values = [v["en"] for v in ATOMIC_PROPERTIES.values()]
+#    vdw_values = [v["vdw"] for v in ATOMIC_PROPERTIES.values()]
+#    cov_values = [v["cov"] for v in ATOMIC_PROPERTIES.values()]
 
-    def normalize(val, min_val, max_val):
-        return (val - min_val) / (max_val - min_val) if max_val != min_val else 0.5
+#    def normalize(val, min_val, max_val):
+#        return (val - min_val) / (max_val - min_val) if max_val != min_val else 0.5
 
-    en_min, en_max = min(en_values), max(en_values)     # 2.20 (H) to 3.98 (F)
-    vdw_min, vdw_max = min(vdw_values), max(vdw_values) # 1.10 (H) to 1.85 (Br)
-    cov_min, cov_max = min(cov_values), max(cov_values) # 0.32 (H) to 1.14 (Br)
+#    en_min, en_max = min(en_values), max(en_values)     # 2.20 (H) to 3.98 (F)
+#    vdw_min, vdw_max = min(vdw_values), max(vdw_values) # 1.10 (H) to 1.85 (Br)
+#    cov_min, cov_max = min(cov_values), max(cov_values) # 0.32 (H) to 1.14 (Br)
 
     # Normalize properties
-    en1 = normalize(p1["en"], en_min, en_max)
-    vdw1 = normalize(p1["vdw"], vdw_min, vdw_max)
-    cov1 = normalize(p1["cov"], cov_min, cov_max)
+#    en1 = normalize(p1["en"], en_min, en_max)
+#    vdw1 = normalize(p1["vdw"], vdw_min, vdw_max)
+#    cov1 = normalize(p1["cov"], cov_min, cov_max)
 
-    en2 = normalize(p2["en"], en_min, en_max)
-    vdw2 = normalize(p2["vdw"], vdw_min, vdw_max)
-    cov2 = normalize(p2["cov"], cov_min, cov_max)
+#    en2 = normalize(p2["en"], en_min, en_max)
+#    vdw2 = normalize(p2["vdw"], vdw_min, vdw_max)
+#    cov2 = normalize(p2["cov"], cov_min, cov_max)
 
     # Euclidean distance
-    return np.sqrt((en1 - en2)**2 + (vdw1 - vdw2)**2 + (cov1 - cov2)**2)
+#    return np.sqrt((en1 - en2)**2 + (vdw1 - vdw2)**2 + (cov1 - cov2)**2)
 
-def molecule_physchem_distance(
-    T1,
-    T2
-):
-    n1 = T1.shape[0]
-    n2 = T2.shape[0]
-    C = np.empty([n1,n2], dtype = float)
-    for i in range(n1):
-        for j in range(n2):
-            C[i,j] = atom_physchem_distance(T1[i], T2[j])
-    return C
+#def molecule_physchem_distance(
+#    T1,
+#    T2
+#):
+#    n1 = T1.shape[0]
+#    n2 = T2.shape[0]
+#    C = np.empty([n1,n2], dtype = float)
+#    for i in range(n1):
+#        for j in range(n2):
+#            C[i,j] = atom_physchem_distance(T1[i], T2[j])
+#    return C

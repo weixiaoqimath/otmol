@@ -66,7 +66,25 @@ ATOMIC_PROPERTIES = {
 
 
 def process_rdkit_mol(mol: Chem.rdchem.Mol, heavy_atoms_only: bool = False) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """process a rdkit mol object. Assume it is a single molecule.
+    """Process a rdkit mol object. Assume it is a single molecule.
+
+    Parameters
+    ----------
+    mol : Chem.rdchem.Mol
+        A rdkit mol object.
+    heavy_atoms_only : bool, optional
+        If True, only heavy atoms (non-hydrogen) will be included in the output.
+        Default is False.
+
+    Returns
+    -------
+    X : numpy.ndarray
+        Array of shape (n_atoms, 3) containing the 3D coordinates of each atom.
+    T : numpy.ndarray
+        Array of shape (n_atoms,) containing the atomic labels for each atom.
+    B : numpy.ndarray
+        Array of shape (n_atoms, n_atoms) containing the bond information,
+        where 1 indicates a bond and 0 indicates no bond.
     """
     #if heavy_atoms_only:
     #    mol = Chem.RemoveHs(mol)
@@ -106,18 +124,13 @@ def process_molecule(mol: pybel.Molecule, heavy_atoms_only: bool = False) -> tup
 
     Returns
     -------
-    coordinates : numpy.ndarray
+    X : numpy.ndarray
         Array of shape (n_atoms, 3) containing the 3D coordinates of each atom.
-    atom_types : numpy.ndarray
+    T : numpy.ndarray
         Array of shape (n_atoms,) containing the atomic labels for each atom.
-    bond_matrix : numpy.ndarray
+    B : numpy.ndarray
         Array of shape (n_atoms, n_atoms) containing the bond information,
         where 1 indicates a bond and 0 indicates no bond.
-
-    Raises
-    ------
-    ValueError
-        If the molecule object is empty or invalid.
     """
     if not mol or len(mol.atoms) == 0:
         raise ValueError("Invalid or empty molecule object provided")
@@ -164,11 +177,6 @@ def parse_sy2(file_path: str) -> tuple[np.ndarray, np.ndarray]:
         Array of shape (n_atoms, 3) containing the 3D coordinates of each atom.
     atom_types : numpy.ndarray
         Array of shape (n_atoms,) containing the atom types as specified in the Mol2 file.
-
-    Raises
-    ------
-    FileNotFoundError
-        If the specified file does not exist.
     """
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"File not found: {file_path}")
@@ -229,7 +237,7 @@ def write_xyz_with_custom_labels(
         labels: np.ndarray,
         comment: str = "Modified xyz file with custom names. Used for ArbAlign."):
     """Write xyz file with coordinates and custom names.
-    Intended for preparing input for ArbAlign.
+    Intended for preparing input for ArbAlign. Can also be used to write a molecule to a xyz file.
 
     Parameters
     ----------
@@ -237,8 +245,10 @@ def write_xyz_with_custom_labels(
         Path to the output xyz file.
     coordinates : np.ndarray
         Array of shape (n_atoms, 3) containing the 3D coordinates of each atom.
-    connectivity : np.ndarray
-        Array of shape (n_atoms,) containing the SYBYL type or atom connectivity.
+    labels : np.ndarray
+        Array of shape (n_atoms,) containing the atomic labels for each atom.
+    comment : str, optional
+        Comment to be written to the xyz file. Default is "Modified xyz file with custom names. Used for ArbAlign."
     """
     with open(output_file, 'w') as f:
         f.write(f"{coordinates.shape[0]}\n")
@@ -249,18 +259,24 @@ def write_xyz_with_custom_labels(
 
 def parse_pdb_file(
         file_path: str = None,
-        ) -> Tuple[np.ndarray, List[str], np.ndarray]:
+        ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Parse a PDB file and extract coordinates, element names, and adjacency matrix.
     
-    Args:
-        file_path (str): Path to the PDB file
+    Parameters
+    ----------
+    file_path : str
+        Path to the PDB file.
         
-    Returns:
-        Tuple[np.ndarray, List[str], np.ndarray]: 
-            - X: coordinates array (N, 3) where N is number of atoms
-            - T: list of element names (N,)
-            - B: adjacency matrix (N, N) where B[i,j] = 1 if atoms i and j are bonded
+    Returns
+    -------
+    X : numpy.ndarray
+        Array of shape (n_atoms, 3) containing the 3D coordinates of each atom.
+    T : numpy.ndarray
+        Array of shape (n_atoms,) containing the atomic labels for each atom.
+    B : numpy.ndarray
+        Array of shape (n_atoms, n_atoms) containing the bond information,
+        where 1 indicates a bond and 0 indicates no bond.
     """
     
     # Initialize data structures
@@ -313,11 +329,15 @@ def parse_atom_line(line: str) -> dict:
     """
     Parse an ATOM or HETATM line from PDB format.
     
-    Args:
-        line (str): ATOM or HETATM line
+    Parameters
+    ----------
+    line : str
+        ATOM or HETATM line
         
-    Returns:
-        dict: Dictionary containing atom information
+    Returns
+    -------
+    dict:
+        Dictionary containing atom information
     """
     # Extract atom serial number (1-indexed)
     atom_serial = int(line[6:11].strip())
@@ -344,11 +364,15 @@ def parse_conect_line(line: str) -> List[int]:
     """
     Parse a CONECT line from PDB format.
     
-    Args:
-        line (str): CONECT line
+    Parameters
+    ----------
+    line : str
+        CONECT line
         
-    Returns:
-        List[int]: List of atoms [central_atom, connected_atom1, connected_atom2, ...]
+    Returns
+    -------
+    List[int]
+        List of atoms [central_atom, connected_atom1, connected_atom2, ...]
     """
     # CONECT format: CONECT, central_atom, connected_atom1, connected_atom2, ...
     # Example: CONECT    1    2   52

@@ -216,6 +216,7 @@ def experiment(
     return pd.DataFrame(results)
 
 
+# minimize mismatched edges set to False for FGG
 def experiment2(
         data_path: str = None,
         mol_pair: list = None, 

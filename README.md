@@ -1,10 +1,8 @@
-# OTMol: optimal transport for molecule alignment
+# OTMol
 
-Currently OTMol provides utilities to align isomers.
+Molecular alignment with optimal transport
 
-## Getting Started
-
-### Dependencies and requirements
+## Installation
 
 OTMol depends on the following packages:
 
@@ -14,22 +12,31 @@ OTMol depends on the following packages:
 - pandas >= 1.3.0
 - pot >= 0.9.5
 - networkx >= 3.1
-- importlib-metadata
 - plotly >= 5.15.0
 
-Python version >= 3.8 is required.
-
-### Installing
-
-cd to ``OTMol`` and run
+OTMol has been tested in python 3.9 virtual environment.
 
 ```
-pip install --user .
+git clone https://github.com/weixiaoqimath/OTMol.git
+cd OTMol
+pip install .
 ```
 
-### Usage
+## Usage
 
-A quick start tutorial is in the tutorial subfolder.
+```
+import numpy as np
+import otmol as otm
+from openbabel import pybel
+import os
+data_path = "../Data/FGG-Tripeptide/"
+nameA = '252_FGG55.xyz'
+nameB = '258_FGG224.xyz'
+molA = next(pybel.readfile("xyz", os.path.join(data_path, nameA)))
+molB = next(pybel.readfile("xyz", os.path.join(data_path, nameB)))
+X_A, T_A, B_A = otm.tl.process_molecule(molA) 
+X_B, T_B, B_B = otm.tl.process_molecule(molB)
+```
 
 ## Ackonwledgement
 

@@ -1,5 +1,6 @@
 # fsgw matching
 # Modified from Yaqi Wu's code. 
+# only used if fsGW solver is used
 
 import numpy as np
 import itertools

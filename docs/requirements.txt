@@ -7,7 +7,7 @@ pot >= 0.9.5
 networkx >= 3.1
 plotly >= 5.15.0
 importlib-metadata
-#openbabel
+openbabel
 
 # Documentation dependencies
 sphinx==5.3.0

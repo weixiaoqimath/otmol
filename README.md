@@ -29,6 +29,10 @@ X_A, T_A, B_A = otm.tl.process_molecule(molA)
 X_B, T_B, B_B = otm.tl.process_molecule(molB)
 ```
 
+## Documentation
+
+See detailed documentation and examples at [https://otmol.readthedocs.io/en/latest/index.html](https://otmol.readthedocs.io/en/latest/index.html).
+
 ## Ackonwledgement
 
 If you find this work useful, please cite:

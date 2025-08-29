@@ -17,8 +17,8 @@ OTMol depends on the following packages:
 OTMol has been tested in python 3.9 virtual environment.
 
 ```
-git clone https://github.com/weixiaoqimath/OTMol.git
-cd OTMol
+git clone https://github.com/weixiaoqimath/otmol.git
+cd otmol
 pip install .
 ```
 

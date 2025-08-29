@@ -15,8 +15,11 @@ build:
 sphinx:
    configuration: docs/conf.py
 
-python:
-   install:
-   - requirements: docs/requirements.txt
+conda:
+  environment: environment.yml # openbabel is not available in pip
+
+#python:
+#   install:
+#   - requirements: docs/requirements.txt
 
    

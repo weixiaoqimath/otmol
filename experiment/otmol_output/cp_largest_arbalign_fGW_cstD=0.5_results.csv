@@ -1,4 +1,4 @@
-nameA,nameB,RMSD(OTMol),alpha,mismatched_bond,assignment
+nameA,nameB,RMSD(OTMol),alpha,BCI,assignment
 ALPRAL10_2_fixed_backbone.xyz,RUQVAB_fixed_backbone.xyz,1.6440167492689597,1.0,0.0,[ 4  5  6  7  8  9 10 11 12 13 14 15  0  1  2  3]
 CGPSAQ_fixed_backbone.xyz,DABVIL_fixed_backbone.xyz,1.260579387376211,1.0,0.0,[ 8  9 10 11 12 13 14 15 16 17 18 19  0  1  2  3  4  5  6  7]
 BINJIR_fixed_backbone.xyz,DUYTIA_fixed_backbone.xyz,1.4666061609360628,1.0,0.0,[ 5  4  7  6  8 11  9 10 12 15 13 14 16 19 17 18 20 23 21 22  0  3  1  2]

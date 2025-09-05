@@ -33,6 +33,6 @@ X_B, T_B, B_B = otm.tl.process_molecule(molB)
 
 See detailed documentation and examples at [https://otmol.readthedocs.io/en/latest/index.html](https://otmol.readthedocs.io/en/latest/index.html).
 
-## Ackonwledgement
+## Reference
 
-If you find this work useful, please cite:
+https://arxiv.org/abs/2509.01550

@@ -47,6 +47,7 @@ reference/
 
 # some data files
 data/_private/
+data/extra_bio_ligands/OTMol_Second_Biomolecules_Notes.docx
 
 # some temp files
 misc/

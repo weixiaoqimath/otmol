@@ -55,7 +55,7 @@ def molecule_alignment(
     save_path : str, optional
         Path to save the aligned molecule, by default None. The atoms in the aligned molecule will be reordered.
     return_BCI: bool, optional
-        Whether to return the BCI value, by default False. Only use when minimize_mismatched_edges is False.
+        Whether to return the BCI value (in range [0, 1]), by default False. Only use when minimize_mismatched_edges is False.
 
     Returns
     -------
@@ -97,6 +97,7 @@ def molecule_alignment(
     assignment_set = set()
     assignment_best = None
     alpha_best = None
+    _alpha_list = []
     X_B_aligned_best = None
     for alpha in alpha_list:
         if method == 'fGW':
@@ -108,11 +109,12 @@ def molecule_alignment(
         assignment = np.argmax(P, axis=1)
         if is_permutation(T_A=T_A, T_B=T_B, perm=assignment, case='single') and tuple(assignment) not in assignment_set:
             assignment_list.append(assignment)
+            _alpha_list.append(alpha) # stores the alpha value for each assignment
             assignment_set.add(tuple(assignment))
 
     if minimize_mismatched_edges:  
         n = len(T_A)
-        for assignment in assignment_list:
+        for i, assignment in enumerate(assignment_list):
             mismatched_bond = mismatched_bond_counter(B_A, B_B, assignment, n, n)
             if mismatched_bond < mismatched_bond_best:
                 rmsd_best = 1e10 # reset rmsd_best
@@ -122,7 +124,7 @@ def molecule_alignment(
                 if rmsd < rmsd_best:
                     rmsd_best = rmsd
                     assignment_best = assignment
-                    alpha_best = alpha
+                    alpha_best = _alpha_list[i]
                     X_B_aligned_best = X_B_aligned[assignment]
             if mismatched_bond == mismatched_bond_best:
                 X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(assignment), reflection)
@@ -130,7 +132,7 @@ def molecule_alignment(
                 if rmsd < rmsd_best:
                     rmsd_best = rmsd
                     assignment_best = assignment     
-                    alpha_best = alpha
+                    alpha_best = _alpha_list[i]
                     X_B_aligned_best = X_B_aligned[assignment]
         if assignment_best is None:
             print('No valid assignment found') 
@@ -147,13 +149,13 @@ def molecule_alignment(
         BCI = mismatched_bond_counter(B_A, B_B, assignment_best, n, n, only_A_bonds=True)[0]/np.sum(B_A)*2
         return assignment_best, rmsd_best, alpha_best, BCI
     else:
-        for assignment in assignment_list:
+        for i, assignment in enumerate(assignment_list):
             X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(assignment), reflection)
             rmsd = root_mean_square_deviation(X_A, X_B_aligned[assignment])
             if rmsd < rmsd_best:
                 rmsd_best = rmsd
                 assignment_best = assignment
-                alpha_best = alpha
+                alpha_best = _alpha_list[i]
                 X_B_aligned_best = X_B_aligned[assignment]
         if assignment_best is None:
             print('No valid assignment found')
@@ -181,7 +183,7 @@ def cluster_alignment(
         T_B: np.ndarray = None, 
         method: str = 'emd',
         p_list: list = None, 
-        case: str = 'same elements',
+        case: str = 'same element',
         reg: float = 1e-2, 
         numItermax: int = 1000, 
         n_atoms: int = None, 
@@ -227,10 +229,19 @@ def cluster_alignment(
     p : float
         Best p value (for 'same element' case).
     """
+    
+    # Validate case argument
+    valid_cases = ['same element', 'molecule cluster']
+    if case not in valid_cases:
+        raise ValueError(f"Invalid case '{case}'. Expected one of: {valid_cases}")
+    
     rmsd_best = 1e10
     p_best = None
+    _p_list = []
     permutation_best = None
     X_B_aligned_best = None
+    assignment_list = []
+    assignment_set = set()
     if case == 'same element':
         a = np.ones(X_A.shape[0])/X_A.shape[0]
         b = np.ones(X_B.shape[0])/X_B.shape[0]
@@ -241,32 +252,36 @@ def cluster_alignment(
             D_A, D_B = D_A/D_A.max(), D_B/D_A.max()
             P = ot.gromov.gromov_wasserstein(D_A, D_B, symmetric=True)
             gw_assignment = np.argmax(P, axis=1)
-            if is_permutation(perm=gw_assignment):   
-                X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(gw_assignment), reflection)
-                D_ot = distance_matrix(X_A, X_B_aligned)**2
-                if method == 'emd':
-                    P_ot = ot.emd(a, b, D_ot/D_ot.max())
-                    ot_assignment = np.argmax(P_ot, axis=1)
+            if is_permutation(perm=gw_assignment) and tuple(gw_assignment) not in assignment_set:   
+                assignment_list.append(gw_assignment)
+                _p_list.append(p)
+                assignment_set.add(tuple(gw_assignment))
+        for i, gw_assignment in enumerate(assignment_list):
+            X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(gw_assignment), reflection)
+            D_ot = distance_matrix(X_A, X_B_aligned)**2
+            if method == 'emd':
+                P_ot = ot.emd(a, b, D_ot/D_ot.max())
+                ot_assignment = np.argmax(P_ot, axis=1)
+                X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(ot_assignment), reflection)
+                rmsd = root_mean_square_deviation(X_A, X_B_aligned[ot_assignment])
+                if rmsd < rmsd_best:
+                    rmsd_best = rmsd
+                    p_best = _p_list[i]
+                    permutation_best = ot_assignment
+                    X_B_aligned_best = X_B_aligned[ot_assignment]
+            if method == 'sinkhorn': # sinkhorn may not always output a permutation matrix
+                P_ot = ot.sinkhorn(a, b, D_ot/D_ot.max(), reg=reg, numItermax=numItermax)
+                assignments = resolve_sinkhorn_conflicts(P_ot)
+                if assignments is None:
+                    continue
+                for ot_assignment in assignments:
                     X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(ot_assignment), reflection)
                     rmsd = root_mean_square_deviation(X_A, X_B_aligned[ot_assignment])
                     if rmsd < rmsd_best:
                         rmsd_best = rmsd
-                        p_best = p
+                        p_best = _p_list[i]
                         permutation_best = ot_assignment
                         X_B_aligned_best = X_B_aligned[ot_assignment]
-                if method == 'sinkhorn': # sinkhorn may not always output a permutation matrix
-                    P_ot = ot.sinkhorn(a, b, D_ot/D_ot.max(), reg=reg, numItermax=numItermax)
-                    assignments = resolve_sinkhorn_conflicts(P_ot)
-                    if assignments is None:
-                        continue
-                    for ot_assignment in assignments:
-                        X_B_aligned, _, _ = kabsch(X_A, X_B, permutation_to_matrix(ot_assignment), reflection)
-                        rmsd = root_mean_square_deviation(X_A, X_B_aligned[ot_assignment])
-                        if rmsd < rmsd_best:
-                            rmsd_best = rmsd
-                            p_best = p
-                            permutation_best = ot_assignment
-                            X_B_aligned_best = X_B_aligned[ot_assignment]
 
         if permutation_best is None:
             print('No valid permutation found')
@@ -353,8 +368,8 @@ def kabsch(
     X2 : numpy.ndarray
         Coordinates of molecule 2 (to be aligned) as an m x 3 array.
     P : numpy.ndarray
-        A transport plan describing the correspondence between molecules. 
-        It should be a permutation matrix.
+        A permutation matrix describing the atom assignment between molecules, 
+        where matrix[i, j] = 1 if assignment[i] = j.
     reflection : bool, optional
         Whether to allow reflection, by default False. 
 

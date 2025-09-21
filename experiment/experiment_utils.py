@@ -69,9 +69,6 @@ def ng_experiment(mol_pair,
                reg: float = 1e-4,
                numItermax: int = 10000,
                save: bool = False, # whether to save the results
-               #plain_GW: bool = False,
-               #n_trials: int = 100,
-               perturbation: bool = False,
                ):
     results = []
     # Load the molecule pairs from the specified file
@@ -82,19 +79,16 @@ def ng_experiment(mol_pair,
         molB = next(pybel.readfile('xyz', os.path.join(data_path, nameB + '.xyz')))
         X_A, T_A, _ = otm.tl.process_molecule(molA) 
         X_B, T_B, _ = otm.tl.process_molecule(molB)
-        if not perturbation:
-            optimal_assignment, rmsd_best, _ = otm.tl.cluster_alignment(
-                X_A = X_A, X_B = X_B, 
-                T_A = T_A, T_B = T_B,
-                case = 'same element', 
-                method = method, 
-                p_list = p_list, 
-                reg = reg, 
-                numItermax = numItermax,
-                save_path = f'./otmol_output/{nameB}_to_{nameA}_otmol.xyz'
-                )
-        #else:
-        #    optimal_assignment, rmsd_best = otm.tl.perturbation_before_gw(X_A = X_A, X_B = X_B, n_trials = n_trials, return_best = True, scale = None)
+        optimal_assignment, rmsd_best, _ = otm.tl.cluster_alignment(
+            X_A = X_A, X_B = X_B, 
+            T_A = T_A, T_B = T_B,
+            case = 'same element', 
+            method = method, 
+            p_list = p_list, 
+            reg = reg, 
+            numItermax = numItermax,
+            save_path = f'./otmol_output/{nameB}_to_{nameA}_otmol.xyz'
+        )
         
         end_time = time.time()
         if not otm.tl.is_permutation(perm=optimal_assignment):
@@ -456,6 +450,42 @@ def cp_experiment(
     if save:
         results_df.to_csv(os.path.join('./otmol_output', f'cp_{dataset_name}_{method}_cstD={cst_D:.1f}_results.csv'), index=False)
     return results_df
+
+
+def BCI_experiment(
+        data_path: str = None,
+        nameA: str = None,
+        nameB: str = None,
+        setup: str = 'element name',
+        method: str = 'fGW', 
+        alpha_list: list = np.arange(0, 1, 0.01)[1:],
+        dataset_name: str = None,
+        cst_D: float = 0.,
+        ):  
+    results = []
+    if setup == 'element name':
+        molA = next(pybel.readfile('xyz', os.path.join(data_path, nameA + '.xyz')))
+        molB = next(pybel.readfile('xyz', os.path.join(data_path, nameB + '.xyz')))
+        X_A, T_A, B_A = otm.tl.process_molecule(molA) 
+        X_B, T_B, B_B = otm.tl.process_molecule(molB)
+    for alpha in alpha_list:
+        assignment, rmsd, _, BCI = otm.tl.molecule_alignment(
+            X_A, X_B, T_A, T_B, B_A = B_A, B_B = B_B, 
+            method = method, 
+            alpha_list = [alpha], 
+            cst_D = cst_D,
+            minimize_mismatched_edges = False,
+            return_BCI = True,
+            save_path = None
+            )
+        results.append({
+            f'RMSD': rmsd,
+            'alpha': alpha,
+            'BCI': BCI*100,
+            'assignment': assignment,
+        }) 
+        #print(f"{rmsd:.2f}")
+    return pd.DataFrame(results)
 
 
 def get_memory_usage():

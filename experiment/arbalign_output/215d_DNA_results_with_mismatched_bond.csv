@@ -1,4 +1,4 @@
-RMSD(ArbAlign),nameA,nameB,reflect,swap,% mismatched bond,mismatched bond indices
+RMSD(ArbAlign),nameA,nameB,reflect,swap,BCI (%),mismatched bond indices
 2.887583006760115,215d_DNA_manual,seed-1_sample-0_model_chainA_pH74,"(-1, -1, 1)","(2, 0, 1)",0.0,[]
 2.764855965825048,215d_DNA_manual,seed-1_sample-1_model_chainA_pH74,"(1, 1, 1)","(2, 0, 1)",0.0,[]
 2.7782060834251285,215d_DNA_manual,seed-1_sample-2_model_chainA_pH74,"(1, -1, 1)","(0, 2, 1)",0.0,[]

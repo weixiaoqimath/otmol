@@ -36,7 +36,7 @@ print('The RMSD of the alignment is', rmsd_best)
 print('The atom assignment is', assignment)
 print('The BCI of the alignment is {}%'.format(BCI*100))
 ```
-The assignment is returned as an integer list 'assignment', where j = assignment[i] means the i-th atom in A is assigned to the j-th atom in B. The user can save the aligned coordinates of B by specifying a output path with the argument "save_path" in molecule_alignment(). OTMol will output an xyz file where atoms in B are permuted according to the assignment.
+The assignment is returned as an integer list 'assignment', where j = assignment[i] means the i-th atom in A is assigned to the j-th atom in B. The user can save the aligned coordinates of B by specifying an output path with the argument "save_path" in molecule_alignment(). OTMol will output an xyz file where atoms in B are permuted according to the assignment.
 
 
 ## Documentation

@@ -440,7 +440,8 @@ def mismatched_bond_counter(B_A, B_B, assignment, n, m, only_A_bonds=False):
     Returns
     -------
     int
-        The number of mismatched bonds.
+        The number of mismatched bonds. 
+        When only_A_bonds is True, the number of bonds in A that are not in B.
     list
         When only_A_bonds is True, a list of tuples, where each tuple contains the indices of the mismatched bonds.
     """

@@ -45,7 +45,9 @@ def molecule_alignment(
     alpha_list : list
         List of alpha values to try for fGW or fsGW solver, by default None.
     molecule_sizes : List[int], optional
-        Sizes of molecules, by default None.
+        Sizes of molecules, by default None. 
+        It is only used when two structures contain multiple molecules,
+        and molecules are ordered in the same way.
     reflection : bool, optional
         Whether to allow reflection in the Kabsch algorithm, by default False.
     cst_D : float, optional

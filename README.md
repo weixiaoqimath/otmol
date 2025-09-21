@@ -1,6 +1,6 @@
 # OTMol
 
-Molecular alignment with optimal transport
+Robust molecular alignment with optimal transport. 
 
 ## Installation
 
@@ -38,11 +38,10 @@ print('The BCI of the alignment is {}%'.format(BCI*100))
 ```
 The assignment is returned as an integer list 'assignment', where j = assignment[i] means the i-th atom in A is assigned to the j-th atom in B. The user can save the aligned coordinates of B by specifying an output path with the argument "save_path" in molecule_alignment(). OTMol will output an xyz file where atoms in B are permuted according to the assignment.
 
-
 ## Documentation
 
 See detailed documentation and examples at [https://otmol.readthedocs.io/en/latest/index.html](https://otmol.readthedocs.io/en/latest/index.html).
 
 ## Reference
 
-https://arxiv.org/abs/2509.01550
+https://arxiv.org/abs/2509.01550 For datasets used in the manuscript, OTMol aligned structures can be found in ./experiment/otmol_output/
